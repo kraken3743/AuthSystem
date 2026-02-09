@@ -31,3 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+.DS_Store
+
+#datasets
+*.csv
+datasets/
+logon.csv
+logon_clean.csv
