@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SecureAuth</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="center">
+    <div class="card">
+        <h1>SecureAuth</h1>
+        <p class="subtitle">Privacy-Preserving Authentication</p>
+
+        <!-- LOGIN -->
+        <div id="loginBox">
+            <input id="loginUser" placeholder="Username">
+            <input id="loginPass" type="password" placeholder="Password">
+            <button onclick="login()">Login</button>
+        </div>
+
+        <!-- REGISTER -->
+        <div id="registerBox" style="display:none">
+            <input id="regUser" placeholder="Username">
+            <input id="regEmail" placeholder="Email">
+            <input id="regPass" type="password" placeholder="Password">
+            <button onclick="register()">Register</button>
+        </div>
+
+        <p id="message" class="message"></p>
+
+        <button class="switch" onclick="toggleMode()">Switch to Register</button>
+    </div>
+</div>
+
+<script src="js/auth.js"></script>
+</body>
+</html>

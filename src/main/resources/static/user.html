@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+    <h2>User Dashboard</h2>
+    <button onclick="logout()">Logout</button>
+</header>
+
+<div class="card" style="margin:20px">
+    <h3>Welcome</h3>
+    <p>You are logged in as a normal user.</p>
+
+    <h4>Security Features</h4>
+    <ul>
+        <li>Login audit logging</li>
+        <li>Differential privacy protection</li>
+        <li>Anomaly detection by admin</li>
+    </ul>
+
+    <p>
+        This system protects your login behaviour using
+        differential privacy and intrusion detection mechanisms.
+    </p>
+</div>
+
+<script>
+function logout() {
+    localStorage.clear();
+    window.location.href = "index.html";
+}
+</script>
+
+</body>
+</html>
