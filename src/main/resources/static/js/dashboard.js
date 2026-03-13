@@ -90,7 +90,21 @@ function loadTimeWindow() {
                 },
                 options: {
                     animation: false,
-                    responsive: true
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: "Username"
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: "Login Count (Last 30 Minutes)"
+                            }
+                        }
+                    }
                 }
             });
         });
