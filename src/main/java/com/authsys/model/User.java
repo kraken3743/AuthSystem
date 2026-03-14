@@ -26,6 +26,8 @@ public class User {
     @Column(nullable = false)
     private String role;
 
+    private boolean suspended = false;
+
     // -------- GETTERS / SETTERS --------
     public Long getUserId() { return userId; }
 
@@ -40,4 +42,7 @@ public class User {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public boolean isSuspended() { return suspended; }
+    public void setSuspended(boolean suspended) { this.suspended = suspended; }
 }

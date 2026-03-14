@@ -35,4 +35,20 @@ public class AdminController {
         repo.findByUsername(username)
             .ifPresent(repo::delete);
     }
+
+    @PostMapping("/suspend-user")
+    public void suspendUser(@RequestParam String username) {
+        repo.findByUsername(username).ifPresent(u -> {
+            u.setSuspended(true);
+            repo.save(u);
+        });
+    }
+
+    @PostMapping("/activate-user")
+    public void activateUser(@RequestParam String username) {
+        repo.findByUsername(username).ifPresent(u -> {
+            u.setSuspended(false);
+            repo.save(u);
+        });
+    }
 }

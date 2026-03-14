@@ -52,17 +52,42 @@ The backend is a monolithic Spring Boot application responsible for business log
 
 *   **Dashboard**: Allows admins to select privacy mechanism (Laplace/Gaussian), epsilon, and delta. All analytics and charts are labeled accordingly.
 
-## 5. Pipeline Diagram
+## 5. Pipeline Architecture
 
-```mermaid
-graph TD;
-    A[User/Register/Login] --> B[Spring Boot Backend]
-    B --> C[Login Logs DB]
-    B --> D[Analytics Controller]
-    D --> E[Apply Differential Privacy (Laplace/Gaussian)]
-    E --> F[REST API]
-    F --> G[Dashboard Frontend]
-    G --> H[Chart.js Visualization]
+```
+User Login/Register Event
+    |
+    v
+[Spring Boot Backend]
+    |
+    v
+[Login Logs Ingestion (App, RBA, CERT)]
+    |
+    v
+[Feature Engineering]
+    |    ├─ Failed Login Counts
+    |    ├─ Time Window Stats
+    |    └─ User/IP Features
+    v
+[Differential Privacy Mechanism]
+    |    ├─ Laplace Noise
+    |    └─ Gaussian Noise
+    v
+[Anomaly Detection]
+    |    ├─ Threshold-based
+    |    ├─ Z-Score
+    |    └─ (Future) Machine Learning (Random Forest, Logistic Regression)
+    v
+[Analytics Aggregation & Fusion]
+    |
+    v
+[REST API Endpoints]
+    |
+    v
+[Frontend Dashboard (Chart.js, UI)]
+    |
+    v
+[Visualization & Admin Insights]
 ```
 
 ## 6. How to Run
@@ -76,3 +101,15 @@ graph TD;
     ./mvn spring-boot:run
     ```
 6.  Access the application at `http://localhost:8080`.
+
+## 8. Manual Implementation: Admin Suspicious Login Alert
+
+In addition to automated anomaly detection, the system provides a manual workflow for administrators to handle suspicious users:
+
+- **Suspicious Login Alert:**
+    - When a user's login is flagged as suspicious (e.g., by anomaly detection or manual review), an alert is shown to the admin in red on the dashboard.
+    - The admin can immediately suspend the user's activity with a single click, preventing further logins or actions by that user.
+    - The admin can later review the user's activity. If the user is verified as legitimate, the admin can reactivate the account with one click.
+    - This workflow ensures that potential threats are contained quickly, while allowing for easy reinstatement of legitimate users.
+
+*This feature empowers admins to respond to threats in real time, combining automated detection with human oversight for maximum security.*

@@ -272,3 +272,24 @@ button.primary {
 button.primary:hover {
     opacity: 0.9;
 }
+
+/* -------- User Table -------- */
+#userTable tr[style*='background:#ffdddd'] {
+    background: #ffdddd !important;
+}
+#userTable button[style*='color:red'] {
+    background: #fff0f0;
+    color: #d00;
+    border: 1px solid #d00;
+    border-radius: 3px;
+    padding: 2px 8px;
+    cursor: pointer;
+}
+#userTable button[style*='color:green'] {
+    background: #f0fff0;
+    color: #090;
+    border: 1px solid #090;
+    border-radius: 3px;
+    padding: 2px 8px;
+    cursor: pointer;
+}

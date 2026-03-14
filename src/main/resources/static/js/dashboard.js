@@ -360,20 +360,24 @@ function loadUsers() {
                 "<tr><th>User</th><th>Role</th><th>Action</th></tr>";
 
             users.forEach(u => {
+                let actionHtml = '';
+                if (u.username === "admin") {
+                    actionHtml = "<span class='muted'>(cannot be edited)</span>";
+                } else if (u.suspended) {
+                    actionHtml = `<button style='color:green' onclick="activateUser('${u.username}')">Activate</button>`;
+                } else {
+                    actionHtml = `<button style='color:red' onclick="suspendUser('${u.username}')">Suspend</button>`;
+                }
                 userTable.innerHTML += `
-                    <tr>
+                    <tr${u.suspended ? " style='background:#ffdddd'" : ""}>
                         <td>${u.username}</td>
                         <td>
-                            <select onchange="changeRole('${u.username}', this.value)">
+                            <select onchange="changeRole('${u.username}', this.value)" ${u.suspended ? 'disabled' : ''}>
                                 <option ${u.role === "USER" ? "selected" : ""}>USER</option>
                                 <option ${u.role === "ADMIN" ? "selected" : ""}>ADMIN</option>
                             </select>
                         </td>
-                        <td>
-                            ${u.username === "admin"
-                                ? "<span class='muted'>(cannot be edited)</span>"
-                                : `<button onclick="deleteUser('${u.username}')">Delete</button>`}
-                        </td>
+                        <td>${actionHtml}</td>
                     </tr>`;
             });
         });
@@ -387,6 +391,17 @@ function changeRole(u, r) {
 function deleteUser(u) {
     if (!confirm(`Delete ${u}?`)) return;
     fetch(`/auth/admin/delete-user?username=${u}`, { method: "DELETE" })
+        .then(loadUsers);
+}
+
+function suspendUser(username) {
+    if (!confirm(`Suspend ${username}? This will block all activity until reactivated.`)) return;
+    fetch(`/auth/admin/suspend-user?username=${username}`, { method: "POST" })
+        .then(loadUsers);
+}
+
+function activateUser(username) {
+    fetch(`/auth/admin/activate-user?username=${username}`, { method: "POST" })
         .then(loadUsers);
 }
 
