@@ -12,7 +12,7 @@ The system's core feature is its security analytics dashboard, which provides in
 *   **Role-Based Access Control (RBAC)**: Distinct `ADMIN` and `USER` roles. The first user to register automatically becomes an `ADMIN`.
 *   **Interactive Analytics Dashboard**: A feature-rich UI for administrators to monitor security metrics.
 *   **Login Auditing**: Logs every login attempt (both successful and failed) for auditing and analysis.
-*   **Differential Privacy**: Applies Laplace noise to analytics queries to protect user privacy.
+*   **Differential Privacy**: Applies Laplace and Gaussian noise to analytics queries to protect user privacy. The dashboard allows selection between Laplace and Gaussian mechanisms, with customizable epsilon (ε) and delta (δ) values.
 *   **Anomaly Detection**:
     *   **Threshold-Based**: Identifies users with a suspiciously high number of failed logins.
     *   **Time-Window Analysis**: Tracks login events in a recent time window (e.g., 30 minutes) to detect sudden spikes in activity.
@@ -39,68 +39,33 @@ The backend is a monolithic Spring Boot application responsible for business log
 *   **Controllers (`com.authsys.controller`)**:
     *   `AuthController`: Manages public-facing endpoints for user registration (`/auth/register`) and login (`/auth/login`).
     *   `AdminController`: Provides restricted endpoints for user management (`/auth/admin/**`), such as listing users, changing roles, and deleting users.
-    *   `AnalyticsController`: Exposes endpoints that run raw SQL queries against the database to fetch login statistics. **Note: This controller is vulnerable to SQL Injection.**
-    *   `CertAnalyticsController`: An alternative analytics controller that applies differential privacy on the server side.
+    *   `AnalyticsController`: Provides endpoints for privacy-preserving analytics and anomaly detection.
+    *   `CertAnalyticsController`: Provides analytics endpoints for CERT dataset.
 
-*   **Services (`com.authsys.service`)**:
-    *   `AuthService`: Contains the core business logic. It handles user creation (including password hashing), validates login credentials, logs all attempts, and implements server-side differential privacy for some analytics flows.
+*   **Service Layer (`com.authsys.service`)**:
+    *   `AuthService`: Implements business logic, including privacy mechanisms.
 
-*   **Repositories (`com.authsys.repository`)**:
-    *   JPA repositories (`UserRepository`, `LoginLogRepository`) define the data access layer, allowing the service to interact with the PostgreSQL database. They include custom JPQL queries for data aggregation.
-
-*   **Security (`com.authsys.config`)**:
-    *   `SecurityConfig`: Configures Spring Security. In its current state, it disables CSRF protection and permits all requests, which is insecure and should only be used for development.
+*   **Privacy Utilities (`com.authsys.privacy`)**:
+    *   `DifferentialPrivacyUtil`: Implements Laplace and Gaussian noise mechanisms.
 
 ### Frontend
 
-The frontend is composed of static HTML, CSS, and JavaScript files served directly by the Spring Boot application.
+*   **Dashboard**: Allows admins to select privacy mechanism (Laplace/Gaussian), epsilon, and delta. All analytics and charts are labeled accordingly.
 
-*   **`auth.js`**: Handles the logic for the login and registration pages. It captures user input and makes API calls to the backend.
-*   **`dashboard.js`**: Powers the administrator dashboard. It fetches data from the analytics and admin endpoints, visualizes time-series data using Chart.js, and provides controls for user management.
-    *   **Client-Side Privacy**: This script fetches raw counts from `/auth/analytics` and applies Laplace noise directly in the browser. This is an insecure implementation, as raw data is exposed to the client.
+## 5. Pipeline Diagram
 
-## 5. API Endpoints
+```mermaid
+graph TD;
+    A[User/Register/Login] --> B[Spring Boot Backend]
+    B --> C[Login Logs DB]
+    B --> D[Analytics Controller]
+    D --> E[Apply Differential Privacy (Laplace/Gaussian)]
+    E --> F[REST API]
+    F --> G[Dashboard Frontend]
+    G --> H[Chart.js Visualization]
+```
 
-| Method   | Endpoint                               | Description                                             |
-|----------|----------------------------------------|---------------------------------------------------------|
-| `POST`   | `/auth/register`                       | Registers a new user.                                   |
-| `POST`   | `/auth/login`                          | Authenticates a user and returns their role.            |
-| `GET`    | `/auth/admin/users`                    | (Admin) Retrieves a list of all users.                  |
-| `POST`   | `/auth/admin/change-role`              | (Admin) Updates a user's role.                          |
-| `DELETE` | `/auth/admin/delete-user`              | (Admin) Deletes a user.                                 |
-| `GET`    | `/auth/analytics/failed-logins`        | Retrieves raw counts of failed logins per user.         |
-| `GET`    | `/auth/analytics/anomalies`            | Retrieves raw counts for anomaly detection.             |
-| `GET`    | `/auth/analytics/time-window`          | Retrieves raw counts for time-window analysis.          |
-| `GET`    | `/auth/analytics/cert/failed-logins`   | Retrieves differentially private login counts from CERT data. |
-
-## 6. Security Vulnerabilities & Areas for Improvement
-
-1.  **SQL Injection**:
-    *   **Location**: `AnalyticsController.java`.
-    *   **Issue**: The `dataset` request parameter is directly concatenated into an SQL query string, allowing an attacker to manipulate the database query.
-    *   **Recommendation**: Refactor the code to avoid dynamic query string construction. Use separate, dedicated methods for each dataset instead of passing the table name as a parameter.
-
-2.  **Insecure Credential Transmission**:
-    *   **Location**: `auth.js` (`register` function).
-    *   **Issue**: The registration request sends the user's password as a URL query parameter, even though the method is POST. This can expose the password in server logs, browser history, and network appliances.
-    *   **Recommendation**: Modify the frontend to send registration data in the request body (e.g., as JSON) and update the `AuthController` to accept a DTO with `@RequestBody`.
-
-3.  **Client-Side Differential Privacy**:
-    *   **Location**: `dashboard.js`.
-    *   **Issue**: The dashboard fetches raw, sensitive login counts from the `/auth/analytics` endpoints and then applies noise in the browser. This completely defeats the purpose of differential privacy, as the sensitive data has already left the secure backend.
-    *   **Recommendation**: All differential privacy logic should be performed exclusively on the server side. The `AnalyticsController` should be refactored to return only the noisy results, similar to how `CertAnalyticsController` and `AuthService` operate.
-
-4.  **Weak Security Configuration**:
-    *   **Location**: `SecurityConfig.java`.
-    *   **Issue**: The current configuration (`.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())`) leaves all endpoints, including administrative ones, completely unprotected.
-    *   **Recommendation**: Implement proper authorization rules. For example, restrict access to `/auth/admin/**` endpoints to users with the `ADMIN` role.
-
-5.  **Potential for Cross-Site Scripting (XSS)**:
-    *   **Location**: `dashboard.js`.
-    *   **Issue**: The script uses `innerHTML += ...` to build tables from API data. If a username or other data contains malicious HTML, it could be executed by the browser.
-    *   **Recommendation**: Avoid `innerHTML`. Instead, use safe DOM manipulation methods like `document.createElement()`, `textContent`, and `appendChild()` to build UI elements.
-
-## 7. How to Run
+## 6. How to Run
 
 1.  Ensure you have PostgreSQL installed and running.
 2.  Create a database for the project.
@@ -108,6 +73,6 @@ The frontend is composed of static HTML, CSS, and JavaScript files served direct
 4.  If using the CERT dataset, download `logon.csv` and ensure it's accessible to the application.
 5.  Run the application using the Maven wrapper:
     ```bash
-    ./mvnw spring-boot:run
+    ./mvn spring-boot:run
     ```
 6.  Access the application at `http://localhost:8080`.

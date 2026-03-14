@@ -28,6 +28,19 @@
         <option value="5">5 (Low Privacy)</option>
     </select>
 
+    <label>Privacy Mechanism:</label>
+    <select id="privacyMethod">
+        <option value="laplace" selected>Laplace</option>
+        <option value="gaussian">Gaussian</option>
+    </select>
+    <label id="deltaLabel" style="display:none">Delta (δ):</label>
+    <select id="delta" style="display:none">
+        <option value="1e-5" selected>1e-5</option>
+        <option value="1e-6">1e-6</option>
+        <option value="1e-7">1e-7</option>
+        <option value="1e-8">1e-8</option>
+    </select>
+
     <button class="primary" onclick="reloadAll()">Load Data</button>
 </div>
 
@@ -72,7 +85,23 @@
     <table id="userTable"></table>
 </div>
 
+<!-- Z-SCORE ANOMALY -->
+<div id="zscore" class="tab">
+    <label>Z-Score Threshold:</label>
+    <select id="zscoreThreshold">
+        <option value="1.5">1.5</option>
+        <option value="2" selected>2 (Recommended)</option>
+        <option value="2.5">2.5</option>
+        <option value="3">3</option>
+    </select>
+    <button onclick="loadZScoreAnomalies()">Detect</button>
+    <table id="zscoreTable"></table>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="js/dashboard.js"></script>
+<script>
+document.querySelector('.tabs').innerHTML += '<button onclick="showTab(\'zscore\')">Z-Score Anomaly</button>';
+</script>
 </body>
 </html>

@@ -11,9 +11,11 @@ import java.util.Map;
 public class AnalyticsController {
 
     private final JdbcTemplate jdbc;
+    private final com.authsys.service.AuthService authService;
 
-    public AnalyticsController(JdbcTemplate jdbc) {
+    public AnalyticsController(JdbcTemplate jdbc, com.authsys.service.AuthService authService) {
         this.jdbc = jdbc;
+        this.authService = authService;
     }
 
     // ---------------- AUDIT LOGS ----------------
@@ -87,5 +89,20 @@ public class AnalyticsController {
                   """;
 
         return jdbc.queryForList(sql);
+    }
+
+    // ---------------- Z-SCORE ANOMALY ENDPOINT ----------------
+    @GetMapping("/zscore-anomalies")
+    public List<Map<String, Object>> zscoreAnomalies(
+            @RequestParam String dataset,
+            @RequestParam double threshold) {
+        return authService.detectZScoreAnomalies(dataset, threshold)
+                .stream()
+                .map(a -> Map.of(
+                        "username", a.getUsername(),
+                        "count", a.getNoisyFailedLogins(),
+                        "anomalous", a.isAnomalous()
+                ))
+                .toList();
     }
 }

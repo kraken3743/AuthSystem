@@ -208,6 +208,25 @@ public List<AnomalyResult> detectCertAnomalies(double epsilon, long threshold) {
             .toList();
 }
 
+// ---------------- Z-SCORE ANOMALY DETECTION ----------------
+public List<AnomalyResult> detectZScoreAnomalies(String dataset, double threshold) {
+    List<Object[]> rows;
+    if ("cert".equals(dataset)) {
+        rows = certRepo.countLogonsPerUser().stream()
+            .map(stat -> new Object[]{stat.getUsername(), stat.getLoginCount()})
+            .toList();
+    } else {
+        rows = loginLogRepository.countFailedLoginsPerUser();
+    }
+    double[] counts = rows.stream().mapToDouble(r -> ((Number) r[1]).doubleValue()).toArray();
+    double mean = java.util.Arrays.stream(counts).average().orElse(0);
+    double stddev = Math.sqrt(java.util.Arrays.stream(counts).map(c -> (c - mean) * (c - mean)).average().orElse(0));
+    return rows.stream().map(r -> {
+        double count = ((Number) r[1]).doubleValue();
+        double z = com.authsys.privacy.DifferentialPrivacyUtil.computeZScore(count, mean, stddev);
+        return new com.authsys.dto.AnomalyResult((String) r[0], Math.round(count), Math.abs(z) >= threshold);
+    }).toList();
+}
 
     
 }
