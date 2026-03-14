@@ -96,13 +96,34 @@ public class AnalyticsController {
     public List<Map<String, Object>> zscoreAnomalies(
             @RequestParam String dataset,
             @RequestParam double threshold) {
-        return authService.detectZScoreAnomalies(dataset, threshold)
-                .stream()
-                .map(a -> Map.of(
-                        "username", a.getUsername(),
-                        "count", a.getNoisyFailedLogins(),
-                        "anomalous", a.isAnomalous()
-                ))
-                .toList();
+        // Use the same approach as other endpoints: fetch raw data from DB, not via AuthService
+        String sql = dataset.equals("cert")
+                ? """
+                    SELECT username, COUNT(*) AS count
+                    FROM cert_login_logs
+                    WHERE activity = 'Logon'
+                    GROUP BY username
+                  """
+                : """
+                    SELECT username, COUNT(*) AS count
+                    FROM login_logs
+                    WHERE success = false
+                    GROUP BY username
+                  """;
+        List<Map<String, Object>> rows = jdbc.queryForList(sql);
+        // Compute mean and stddev
+        double[] counts = rows.stream().mapToDouble(r -> ((Number) r.get("count")).doubleValue()).toArray();
+        double mean = java.util.Arrays.stream(counts).average().orElse(0);
+        double stddev = Math.sqrt(java.util.Arrays.stream(counts).map(c -> (c - mean) * (c - mean)).average().orElse(0));
+        // Add z-score anomaly flag
+        return rows.stream().map(r -> {
+            double count = ((Number) r.get("count")).doubleValue();
+            double z = (stddev == 0) ? 0 : (count - mean) / stddev;
+            return Map.of(
+                "username", r.get("username"),
+                "count", count,
+                "anomalous", Math.abs(z) >= threshold
+            );
+        }).toList();
     }
 }

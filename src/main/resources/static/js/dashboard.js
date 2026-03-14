@@ -117,11 +117,16 @@ function loadAnomalies() {
 
 function loadZScoreAnomalies() {
     const th = parseFloat(document.getElementById("zscoreThreshold").value);
-    return fetch(`/auth/analytics/zscore-anomalies?dataset=${getDataset()}&threshold=${th}`)
+    zscoreTable.innerHTML = "<tr><th>User</th><th>Count</th><th>Z-Score Anomaly</th></tr>";
+    showLoading();
+    fetch(`/auth/analytics/zscore-anomalies?dataset=${getDataset()}&threshold=${th}`)
         .then(r => r.json())
         .then(data => {
-            zscoreTable.innerHTML =
-                "<tr><th>User</th><th>Count</th><th>Z-Score Anomaly</th></tr>";
+            if (!data || data.length === 0) {
+                zscoreTable.innerHTML += `<tr><td colspan='3' style='text-align:center;color:#aaa'>No data available</td></tr>`;
+                hideLoading();
+                return;
+            }
             data.forEach(d => {
                 zscoreTable.innerHTML += `
                     <tr>
@@ -130,6 +135,11 @@ function loadZScoreAnomalies() {
                         <td>${d.anomalous ? "YES" : "NO"}</td>
                     </tr>`;
             });
+            hideLoading();
+        })
+        .catch(() => {
+            zscoreTable.innerHTML += `<tr><td colspan='3' style='text-align:center;color:#f55'>Error loading data</td></tr>`;
+            hideLoading();
         });
 }
 
@@ -171,13 +181,21 @@ function loadTimeWindow() {
                         x: {
                             title: {
                                 display: true,
-                                text: "Username"
+                                text: "Username",
+                                color: "#fff"
+                            },
+                            ticks: {
+                                color: "#fff"
                             }
                         },
                         y: {
                             title: {
                                 display: true,
-                                text: method === "laplace" ? "Login Count (Laplace, Last 30 Minutes)" : "Login Count (Gaussian, Last 30 Minutes)"
+                                text: method === "laplace" ? "Login Count (Laplace, Last 30 Minutes)" : "Login Count (Gaussian, Last 30 Minutes)",
+                                color: "#fff"
+                            },
+                            ticks: {
+                                color: "#fff"
                             }
                         }
                     }
