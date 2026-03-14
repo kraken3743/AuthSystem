@@ -126,4 +126,46 @@ public class AnalyticsController {
             );
         }).toList();
     }
+
+    // ---------------- RBA DATASET ANALYTICS ----------------
+    @GetMapping("/rba/failed-logins")
+    public List<Map<String, Object>> rbaFailedLogins(@RequestParam(defaultValue = "100") int limit) {
+        String sql = "SELECT username, COUNT(*) AS count FROM rba_login_logs WHERE success = false GROUP BY username ORDER BY count DESC LIMIT ?";
+        return jdbc.queryForList(sql, limit);
+    }
+
+    @GetMapping("/rba/time-window")
+    public List<Map<String, Object>> rbaTimeWindow(@RequestParam(defaultValue = "100") int limit) {
+        String sql = "SELECT username, COUNT(*) AS count FROM rba_login_logs WHERE success = false AND created_at >= NOW() - INTERVAL '30 minutes' GROUP BY username ORDER BY count DESC LIMIT ?";
+        return jdbc.queryForList(sql, limit);
+    }
+
+    @GetMapping("/rba/anomalies")
+    public List<Map<String, Object>> rbaAnomalies(@RequestParam int threshold, @RequestParam(defaultValue = "100") int limit) {
+        String sql = "SELECT username, COUNT(*) AS count, COUNT(*) >= ? AS anomalous FROM rba_login_logs WHERE success = false GROUP BY username ORDER BY count DESC LIMIT ?";
+        return jdbc.queryForList(sql, threshold, limit);
+    }
+
+    @GetMapping("/rba/zscore-anomalies")
+    public List<Map<String, Object>> rbaZScoreAnomalies(@RequestParam double threshold, @RequestParam(defaultValue = "100") int limit) {
+        String sql = "SELECT username, COUNT(*) AS count FROM rba_login_logs WHERE success = false GROUP BY username ORDER BY count DESC LIMIT ?";
+        List<Map<String, Object>> rows = jdbc.queryForList(sql, limit);
+        double[] counts = rows.stream().mapToDouble(r -> ((Number) r.get("count")).doubleValue()).toArray();
+        double mean = java.util.Arrays.stream(counts).average().orElse(0);
+        double stddev = Math.sqrt(java.util.Arrays.stream(counts).map(c -> (c - mean) * (c - mean)).average().orElse(0));
+        return rows.stream().map(r -> {
+            double count = ((Number) r.get("count")).doubleValue();
+            double z = (stddev == 0) ? 0 : (count - mean) / stddev;
+            return Map.of(
+                "username", r.get("username"),
+                "count", count,
+                "anomalous", Math.abs(z) >= threshold
+            );
+        }).toList();
+    }
+
+    @GetMapping("/rba/attack-labels")
+    public List<Boolean> rbaAttackLabels() {
+        return authService.getRbaAttackLabels();
+    }
 }

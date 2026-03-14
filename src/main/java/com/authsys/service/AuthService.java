@@ -228,5 +228,19 @@ public List<AnomalyResult> detectZScoreAnomalies(String dataset, double threshol
     }).toList();
 }
 
+// ---------------- RBA DATASET SUPPORT ----------------
+@Autowired(required = false)
+private com.authsys.repository.RbaLoginLogRepository rbaRepo;
+
+public List<Object[]> countRbaFailedLoginsPerUser() {
+    return rbaRepo != null ? rbaRepo.countFailedLoginsPerUser() : List.of();
+}
+public List<Object[]> rbaFailedLoginsLastHour() {
+    return rbaRepo != null ? rbaRepo.failedLoginsLastHour() : List.of();
+}
+public List<Boolean> getRbaAttackLabels() {
+    return rbaRepo != null ? rbaRepo.getAllAttackLabels() : List.of();
+}
+
     
 }

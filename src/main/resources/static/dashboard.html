@@ -17,6 +17,7 @@
     <select id="datasetSelect">
         <option value="cert">CERT Dataset</option>
         <option value="manual">Manual Logins</option>
+        <option value="rba">RBA Dataset</option>
     </select>
 
     <label>Differential Privacy (ε):</label>
@@ -57,6 +58,7 @@
     <button onclick="showTab('time')">Time-Window IDS</button>
     <button onclick="showTab('users')">User Management</button>
     <button onclick="showTab('zscore')">Z-Score Anomaly</button>
+    <button onclick="showTab('rba-accuracy')">Algorithm Accuracy (RBA)</button>
 </div>
 
 <!-- AUDIT LOGS -->
@@ -97,6 +99,12 @@
     </select>
     <button onclick="loadZScoreAnomalies()">Detect</button>
     <table id="zscoreTable"></table>
+</div>
+
+<!-- RBA ACCURACY TAB -->
+<div id="rba-accuracy" class="tab">
+    <button onclick="runRbaAccuracyComparison()">Run Accuracy Comparison</button>
+    <canvas id="rbaAccuracyChart" style="margin-top:30px;"></canvas>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
