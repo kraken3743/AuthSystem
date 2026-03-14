@@ -423,36 +423,94 @@ function reloadAll() {
 }
 
 function runRbaAccuracyComparison() {
-    // Show green loading bar at 0%
     showGreenLoadingBar(0);
-    // Step 1: Fetch ground truth
-    fetch('/auth/analytics/rba/attack-labels')
+    fetch('/auth/analytics/rba/accuracy-comparison?limit=100')
         .then(r => r.json())
-        .then(groundTruth => {
-            showGreenLoadingBar(20);
-            // Step 2: Run Laplace
-            fetch('/auth/analytics/rba/anomalies?threshold=3')
-                .then(r => r.json())
-                .then(laplace => {
-                    showGreenLoadingBar(40);
-                    // Step 3: Run Gaussian (simulate with same endpoint for now)
-                    fetch('/auth/analytics/rba/anomalies?threshold=3')
-                        .then(r => r.json())
-                        .then(gaussian => {
-                            showGreenLoadingBar(60);
-                            // Step 4: Run Z-Score
-                            fetch('/auth/analytics/rba/zscore-anomalies?threshold=2')
-                                .then(r => r.json())
-                                .then(zscore => {
-                                    showGreenLoadingBar(80);
-                                    // Step 5: Compare and show results
-                                    compareRbaAccuracy(groundTruth, laplace, gaussian, zscore);
-                                    showGreenLoadingBar(100);
-                                    setTimeout(hideGreenLoadingBar, 800);
-                                });
-                        });
-                });
+        .then(result => {
+            showGreenLoadingBar(80);
+            const accuracy = result.accuracy;
+            // Prepare data for grouped bar chart: Anomaly Detection vs. RBA Ground Truth
+            const labels = [
+                'Laplace', 'Gaussian', 'Z-Score', 'No Algorithm'
+            ];
+            const anomalyAcc = [
+                accuracy['Laplace'],
+                accuracy['Gaussian'],
+                accuracy['Z-Score'],
+                accuracy['No Algorithm']
+            ];
+            // RBA ground truth: percent of attack and benign
+            const gt = result.groundTruth;
+            const total = gt.attack + gt.benign;
+            const rbaAttackPct = Math.round(100 * gt.attack / total);
+            // For each label, show RBA attack rate as a reference bar
+            const rbaRef = Array(labels.length).fill(rbaAttackPct);
+            showRbaAccuracyChartGrouped(labels, anomalyAcc, rbaRef);
+            // Show a mini description below the chart
+            showRbaAccuracyDescription(rbaAttackPct);
+            showGreenLoadingBar(100);
+            setTimeout(hideGreenLoadingBar, 800);
         });
+}
+
+function showRbaAccuracyChartGrouped(labels, anomalyAcc, rbaRef) {
+    let ctx = document.getElementById('rbaAccuracyChart').getContext('2d');
+    if (window.rbaAccuracyChartInstance) window.rbaAccuracyChartInstance.destroy();
+    window.rbaAccuracyChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Project Anomaly Detection Accuracy (%)',
+                    data: anomalyAcc,
+                    backgroundColor: '#ff9f40'
+                },
+                {
+                    label: 'RBA Dataset Attack Rate (%)',
+                    data: rbaRef,
+                    backgroundColor: '#4e79ff'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { labels: { color: '#fff' } }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: 'Percent (%)', color: '#fff' },
+                    ticks: { color: '#fff' }
+                },
+                x: {
+                    title: { display: true, text: 'Algorithm/Threshold', color: '#fff' },
+                    ticks: { color: '#fff' }
+                }
+            }
+        }
+    });
+}
+
+function showRbaAccuracyDescription(rbaAttackPct) {
+    let desc = document.getElementById('rbaAccuracyDesc');
+    if (!desc) {
+        desc = document.createElement('div');
+        desc.id = 'rbaAccuracyDesc';
+        desc.style.color = '#fff';
+        desc.style.marginTop = '20px';
+        desc.style.fontSize = '1.1em';
+        document.getElementById('rba-accuracy').appendChild(desc);
+    }
+    desc.innerHTML =
+        `<b>Comparison Description:</b> This chart compares the accuracy of anomaly detection algorithms implemented in this project (orange bars) against the ground truth attack rate from the RBA dataset (blue bars).<br>
+        <ul style='margin:8px 0 0 20px;'>
+        <li><b>Anomaly Detection Accuracy</b>: Percentage of correct anomaly/benign predictions by the algorithms in this project for each method.</li>
+        <li><b>RBA Dataset Attack Rate</b>: Percentage of actual attacks in the RBA dataset (ground truth, for reference).</li>
+        </ul>
+        <b>Interpretation:</b> Higher orange bars indicate better detection accuracy by the implemented algorithms. The blue bar shows the baseline attack rate in the dataset for context. The 'No Algorithm' bar shows the accuracy if no anomaly detection is performed (always predicting benign).`;
 }
 
 function compareRbaAccuracy(groundTruth, laplace, gaussian, zscore) {

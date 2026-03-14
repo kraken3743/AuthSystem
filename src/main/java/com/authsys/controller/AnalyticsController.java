@@ -168,4 +168,85 @@ public class AnalyticsController {
     public List<Boolean> rbaAttackLabels() {
         return authService.getRbaAttackLabels();
     }
+
+    // ---------------- RBA ACCURACY COMPARISON (SINGLE-THRESHOLD, ALL ALGO, BASELINE) ----------------
+    @GetMapping("/rba/accuracy-comparison")
+    public Map<String, Object> rbaAccuracyComparison(
+            @RequestParam(defaultValue = "100") int limit) {
+        // Single thresholds for Laplace and Gaussian
+        double laplaceThreshold = 3;
+        double gaussianDelta = 1e-5;
+        int anomalyThreshold = 3; // for count-based anomaly
+        double zscoreThreshold = 2; // for z-score
+
+        // Get all users and their ground truth
+        String sql = "SELECT username, BOOL_OR(is_attack_ip) AS is_attack_ip FROM rba_login_logs GROUP BY username ORDER BY COUNT(*) DESC LIMIT ?";
+        List<Map<String, Object>> users = jdbc.queryForList(sql, limit);
+        // Get failed login counts
+        String lapSql = "SELECT username, COUNT(*) AS count FROM rba_login_logs WHERE success = false GROUP BY username ORDER BY count DESC LIMIT ?";
+        List<Map<String, Object>> lapRows = jdbc.queryForList(lapSql, limit);
+        Map<String, Integer> lapCounts = new java.util.HashMap<>();
+        for (Map<String, Object> row : lapRows) lapCounts.put((String)row.get("username"), ((Number)row.get("count")).intValue());
+        double[] counts = lapRows.stream().mapToDouble(r -> ((Number) r.get("count")).doubleValue()).toArray();
+        double mean = java.util.Arrays.stream(counts).average().orElse(0);
+        double stddev = Math.sqrt(java.util.Arrays.stream(counts).map(c -> (c - mean) * (c - mean)).average().orElse(0));
+
+        // Compose result for each user
+        java.util.Random rng = new java.util.Random(42); // fixed seed for reproducibility
+        double laplaceScale = 1.0; // Laplace scale (b)
+        double gaussianStddev = 1.0; // Gaussian stddev (sigma)
+        List<Map<String, Object>> result = new java.util.ArrayList<>();
+        for (Map<String, Object> user : users) {
+            String username = (String) user.get("username");
+            boolean isAttack = Boolean.TRUE.equals(user.get("is_attack_ip"));
+            int count = lapCounts.getOrDefault(username, 0);
+            // Laplace: add Laplace noise to count
+            double laplaceNoise = -laplaceScale * Math.signum(rng.nextDouble() - 0.5) * Math.log(1 - 2 * Math.abs(rng.nextDouble() - 0.5));
+            double laplaceNoisyCount = count + laplaceNoise;
+            boolean laplaceAnomaly = laplaceNoisyCount >= laplaceThreshold;
+            // Gaussian: add Gaussian noise to count
+            double gaussianNoise = rng.nextGaussian() * gaussianStddev;
+            double gaussianNoisyCount = count + gaussianNoise;
+            boolean gaussianAnomaly = gaussianNoisyCount >= anomalyThreshold;
+            // Z-Score: abs(z) >= zscoreThreshold
+            double z = (stddev == 0) ? 0 : (count - mean) / stddev;
+            boolean zscoreAnomaly = Math.abs(z) >= zscoreThreshold;
+            // Baseline: no algorithm, always predict benign (false)
+            boolean noAlgoAnomaly = false;
+            result.add(Map.of(
+                "username", username,
+                "is_attack_ip", isAttack,
+                "laplace_anomaly", laplaceAnomaly,
+                "gaussian_anomaly", gaussianAnomaly,
+                "zscore_anomaly", zscoreAnomaly,
+                "no_algo_anomaly", noAlgoAnomaly
+            ));
+        }
+        // Compute accuracy for each algorithm/threshold
+        int total = result.size();
+        int lapCorrect = 0, gauCorrect = 0, zCorrect = 0, noAlgoCorrect = 0;
+        for (Map<String, Object> row : result) {
+            boolean truth = Boolean.TRUE.equals(row.get("is_attack_ip"));
+            if (Boolean.TRUE.equals(row.get("laplace_anomaly")) == truth) lapCorrect++;
+            if (Boolean.TRUE.equals(row.get("gaussian_anomaly")) == truth) gauCorrect++;
+            if (Boolean.TRUE.equals(row.get("zscore_anomaly")) == truth) zCorrect++;
+            if (Boolean.TRUE.equals(row.get("no_algo_anomaly")) == truth) noAlgoCorrect++;
+        }
+        Map<String, Object> accuracy = Map.of(
+            "Laplace", Math.round(100.0 * lapCorrect / total),
+            "Gaussian", Math.round(100.0 * gauCorrect / total),
+            "Z-Score", Math.round(100.0 * zCorrect / total),
+            "No Algorithm", Math.round(100.0 * noAlgoCorrect / total)
+        );
+        // Also return ground truth for charting
+        int attackCount = 0;
+        for (Map<String, Object> row : result) {
+            if (Boolean.TRUE.equals(row.get("is_attack_ip"))) attackCount++;
+        }
+        Map<String, Object> groundTruth = Map.of(
+            "attack", attackCount,
+            "benign", result.size() - attackCount
+        );
+        return Map.of("accuracy", accuracy, "details", result, "groundTruth", groundTruth);
+    }
 }
