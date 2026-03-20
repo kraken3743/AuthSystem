@@ -129,9 +129,9 @@ public class AnalyticsController {
 
     // ---------------- RBA DATASET ANALYTICS ----------------
     @GetMapping("/rba/failed-logins")
-    public List<Map<String, Object>> rbaFailedLogins(@RequestParam(defaultValue = "100") int limit) {
-        String sql = "SELECT username, COUNT(*) AS count FROM rba_login_logs WHERE success = false GROUP BY username ORDER BY count DESC LIMIT ?";
-        return jdbc.queryForList(sql, limit);
+    public List<Map<String, Object>> rbaFailedLogins(@RequestParam(defaultValue = "100") int limit, @RequestParam(defaultValue = "0") int offset) {
+        String sql = "SELECT username, COUNT(*) AS count FROM rba_login_logs WHERE success = false GROUP BY username ORDER BY count DESC LIMIT ? OFFSET ?";
+        return jdbc.queryForList(sql, limit, offset);
     }
 
     @GetMapping("/rba/time-window")
@@ -167,6 +167,14 @@ public class AnalyticsController {
     @GetMapping("/rba/attack-labels")
     public List<Boolean> rbaAttackLabels() {
         return authService.getRbaAttackLabels();
+    }
+
+    // ---------------- RBA USER COUNT (for pagination) ----------------
+    @GetMapping("/rba/user-count")
+    public int rbaUserCount() {
+        String sql = "SELECT COUNT(DISTINCT username) FROM rba_login_logs";
+        Integer count = jdbc.queryForObject(sql, Integer.class);
+        return count != null ? count : 0;
     }
 
     // ---------------- RBA ACCURACY COMPARISON (SINGLE-THRESHOLD, ALL ALGO, BASELINE) ----------------

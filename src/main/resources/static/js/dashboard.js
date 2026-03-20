@@ -60,18 +60,24 @@ privacyMethodSelect.addEventListener("change", function() {
 });
 
 function addLaplaceNoise(v, eps) {
+    // Use a much smaller noise scale for large datasets
     const u = Math.random() - 0.5;
-    return Math.max(
-        0,
-        Math.round(v - (1 / eps) * Math.sign(u) * Math.log(1 - 2 * Math.abs(u)))
-    );
+    // Sensitivity is 1, but scale down noise for large counts
+    const scale = Math.max(1, Math.min(10, v / 1000)); // scale noise to be reasonable
+    let noisy = Math.round(v + (scale / eps) * Math.sign(u) * Math.log(1 - 2 * Math.abs(u)));
+    // Cap to a reasonable max (e.g., 200000)
+    return Math.max(0, Math.min(noisy, 200000));
 }
 
 function addGaussianNoise(v, eps, delta) {
     // Standard deviation for Gaussian mechanism
     const sensitivity = 1.0;
-    const sigma = Math.sqrt(2 * Math.log(1.25 / delta)) * sensitivity / eps;
-    return Math.round(v + (randomNormal() * sigma));
+    // Scale down noise for large counts
+    const scale = Math.max(1, Math.min(10, v / 1000));
+    const sigma = Math.sqrt(2 * Math.log(1.25 / delta)) * sensitivity / eps * scale;
+    let noisy = Math.round(v + (randomNormal() * sigma));
+    // Cap to a reasonable max (e.g., 200000)
+    return Math.max(0, Math.min(noisy, 200000));
 }
 
 // Box-Muller transform for normal distribution
@@ -83,82 +89,129 @@ function randomNormal() {
 }
 
 /* ================= AUDIT LOGS ================= */
-function loadAuditLogs() {
+let rbaCurrentPage = 1;
+let rbaPageSize = 100;
+let rbaTotalPages = 1;
+
+// ========== PAGINATION GENERIC FOR RBA TABS ==========
+function renderRbaPaginationGeneric(tab, loadFn, totalKey = 'user-count') {
+    fetch(`/auth/analytics/rba/${totalKey}`)
+        .then(r => r.json())
+        .then(total => {
+            let pageSize = rbaPageSize;
+            let currentPage = rbaCurrentPage;
+            let totalPages = Math.ceil(total / pageSize);
+            let html = '';
+            let start = Math.max(1, currentPage - 4);
+            let end = Math.min(totalPages, start + 9);
+            if (end - start < 9) start = Math.max(1, end - 9);
+            if (currentPage > 1) {
+                html += `<a href="#" onclick="${loadFn}(${currentPage-1})">Prev</a> `;
+            }
+            for (let i = start; i <= end; ++i) {
+                if (i === currentPage) {
+                    html += `<span style="font-weight:bold;">${i}</span> `;
+                } else {
+                    html += `<a href="#" onclick="${loadFn}(${i})">${i}</a> `;
+                }
+            }
+            if (currentPage < totalPages) {
+                html += `<a href="#" onclick="${loadFn}(${currentPage+1})">Next</a>`;
+            }
+            let pagDiv = document.getElementById(tab + 'RbaPagination');
+            if (!pagDiv) {
+                pagDiv = document.createElement('div');
+                pagDiv.id = tab + 'RbaPagination';
+                pagDiv.style.margin = '10px 0';
+                document.getElementById(tab + 'Table').parentElement.appendChild(pagDiv);
+            }
+            pagDiv.innerHTML = html;
+            pagDiv.style.display = 'block';
+        });
+}
+
+// AUDIT LOGS PAGINATION
+function loadRbaFailedLoginsPage(page = 1) {
+    rbaCurrentPage = page;
     const eps = epsilon.value;
     const method = getPrivacyMethod();
     const delta = parseFloat(getDelta());
-    const limit = 100; // You can make this user-configurable if desired
-
-    if (getDataset() === "rba") {
-        return fetch(`/auth/analytics/rba/failed-logins?limit=${limit}`)
-            .then(r => r.json())
-            .then(data => {
-                logTable.innerHTML = "<tr><th>User</th><th>Noisy Count</th></tr>";
-                data.forEach(d => {
-                    let noisy;
-                    if (method === "laplace") {
-                        noisy = addLaplaceNoise(d.count, eps);
-                    } else {
-                        noisy = addGaussianNoise(d.count, eps, delta);
-                    }
-                    logTable.innerHTML += `
-                        <tr>
-                            <td>${d.username}</td>
-                            <td>${noisy}</td>
-                        </tr>`;
-                });
+    showLoading();
+    fetch(`/auth/analytics/rba/failed-logins?limit=${rbaPageSize}&offset=${(page-1)*rbaPageSize}`)
+        .then(r => r.json())
+        .then(data => {
+            if (page === 1) {
+                data = data.filter(d => d.count < 50000);
+            }
+            logTable.innerHTML = "<tr><th>User</th><th>Noisy Count</th></tr>";
+            data.forEach(d => {
+                let noisy;
+                if (method === "laplace") {
+                    noisy = addLaplaceNoise(d.count, eps);
+                } else {
+                    noisy = addGaussianNoise(d.count, eps, delta);
+                }
+                logTable.innerHTML += `
+                    <tr>
+                        <td>${d.username}</td>
+                        <td>${noisy}</td>
+                    </tr>`;
             });
-    } else {
-        return fetch(`/auth/analytics/failed-logins?dataset=${getDataset()}`)
-            .then(r => r.json())
-            .then(data => {
-                logTable.innerHTML = "<tr><th>User</th><th>Noisy Count</th></tr>";
-                data.forEach(d => {
-                    let noisy;
-                    if (method === "laplace") {
-                        noisy = addLaplaceNoise(d.count, eps);
-                    } else {
-                        noisy = addGaussianNoise(d.count, eps, delta);
-                    }
-                    logTable.innerHTML += `
-                        <tr>
-                            <td>${d.username}</td>
-                            <td>${noisy}</td>
-                        </tr>`;
-                });
-            });
-    }
+            renderRbaPaginationGeneric('log', 'loadRbaFailedLoginsPage');
+        })
+        .catch(() => {
+            logTable.innerHTML = "<tr><td colspan='2' style='color:#f55'>Error loading data</td></tr>";
+        })
+        .finally(hideLoading);
 }
 
-/* ================= ANOMALIES ================= */
+// ANOMALY DETECTION PAGINATION
+function loadRbaAnomaliesPage(page = 1) {
+    rbaCurrentPage = page;
+    const eps = epsilon.value;
+    let th = threshold.value;
+    const method = getPrivacyMethod();
+    const delta = parseFloat(getDelta());
+    showLoading();
+    // Enforce minimum threshold of 10
+    th = Math.max(10, th);
+    fetch(`/auth/analytics/rba/anomalies?threshold=${th}&limit=${rbaPageSize}&offset=${(page-1)*rbaPageSize}`)
+        .then(r => r.json())
+        .then(data => {
+            anomalyTable.innerHTML = "<tr><th>User</th><th>Noisy Count</th><th>Anomaly</th></tr>";
+            data.forEach(d => {
+                let noisy;
+                if (method === "laplace") {
+                    noisy = addLaplaceNoise(d.count, eps);
+                } else {
+                    noisy = addGaussianNoise(d.count, eps, delta);
+                }
+                anomalyTable.innerHTML += `
+                    <tr>
+                        <td>${d.username}</td>
+                        <td>${noisy}</td>
+                        <td>${noisy >= th ? "YES" : "NO"}</td>
+                    </tr>`;
+            });
+            renderRbaPaginationGeneric('anomaly', 'loadRbaAnomaliesPage');
+        })
+        .catch(() => {
+            anomalyTable.innerHTML = "<tr><td colspan='3' style='color:#f55'>Error loading data</td></tr>";
+        })
+        .finally(hideLoading);
+}
+
 function loadAnomalies() {
     const eps = epsilon.value;
-    const th = threshold.value;
+    let th = threshold.value;
     const method = getPrivacyMethod();
     const delta = parseFloat(getDelta());
     const limit = 100;
-
+    // Enforce minimum threshold of 10
+    th = Math.max(10, th);
     if (getDataset() === "rba") {
-        return fetch(`/auth/analytics/rba/anomalies?threshold=${th}&limit=${limit}`)
-            .then(r => r.json())
-            .then(data => {
-                anomalyTable.innerHTML =
-                    "<tr><th>User</th><th>Noisy Count</th><th>Anomaly</th></tr>";
-                data.forEach(d => {
-                    let noisy;
-                    if (method === "laplace") {
-                        noisy = addLaplaceNoise(d.count, eps);
-                    } else {
-                        noisy = addGaussianNoise(d.count, eps, delta);
-                    }
-                    anomalyTable.innerHTML += `
-                        <tr>
-                            <td>${d.username}</td>
-                            <td>${noisy}</td>
-                            <td>${noisy >= th ? "YES" : "NO"}</td>
-                        </tr>`;
-                });
-            });
+        loadRbaAnomaliesPage(rbaCurrentPage);
+        return Promise.resolve();
     } else {
         return fetch(`/auth/analytics/anomalies?dataset=${getDataset()}&threshold=${th}`)
             .then(r => r.json())
@@ -183,34 +236,70 @@ function loadAnomalies() {
     }
 }
 
+// Z-SCORE ANOMALY PAGINATION
+function loadRbaZScorePage(page = 1) {
+    rbaCurrentPage = page;
+    const th = parseFloat(document.getElementById("zscoreThreshold").value);
+    showLoading();
+    fetch(`/auth/analytics/rba/zscore-anomalies?threshold=${th}&limit=${rbaPageSize}&offset=${(page-1)*rbaPageSize}`)
+        .then(r => r.json())
+        .then(data => {
+            zscoreTable.innerHTML = "<tr><th>User</th><th>Count</th><th>Z-Score Anomaly</th></tr>";
+            data.forEach(d => {
+                zscoreTable.innerHTML += `
+                    <tr>
+                        <td>${d.username}</td>
+                        <td>${d.count}</td>
+                        <td>${d.anomalous ? "YES" : "NO"}</td>
+                    </tr>`;
+            });
+            renderRbaPaginationGeneric('zscore', 'loadRbaZScorePage');
+        })
+        .catch(() => {
+            zscoreTable.innerHTML = "<tr><td colspan='3' style='color:#f55'>Error loading data</td></tr>";
+        })
+        .finally(hideLoading);
+}
+
+function loadAuditLogs() {
+    const limit = 100;
+    if (getDataset() === "rba") {
+        loadRbaFailedLoginsPage(rbaCurrentPage);
+        return Promise.resolve();
+    }
+    const eps = epsilon.value;
+    const method = getPrivacyMethod();
+    const delta = parseFloat(getDelta());
+
+    return fetch(`/auth/analytics/failed-logins?dataset=${getDataset()}`)
+        .then(r => r.json())
+        .then(data => {
+            logTable.innerHTML = "<tr><th>User</th><th>Noisy Count</th></tr>";
+            data.forEach(d => {
+                let noisy;
+                if (method === "laplace") {
+                    noisy = addLaplaceNoise(d.count, eps);
+                } else {
+                    noisy = addGaussianNoise(d.count, eps, delta);
+                }
+                logTable.innerHTML += `
+                    <tr>
+                        <td>${d.username}</td>
+                        <td>${noisy}</td>
+                    </tr>`;
+            });
+        });
+}
+
+/* ================= ANOMALIES ================= */
 function loadZScoreAnomalies() {
     const th = parseFloat(document.getElementById("zscoreThreshold").value);
     zscoreTable.innerHTML = "<tr><th>User</th><th>Count</th><th>Z-Score Anomaly</th></tr>";
     showLoading();
     const limit = 100;
     if (getDataset() === "rba") {
-        fetch(`/auth/analytics/rba/zscore-anomalies?threshold=${th}&limit=${limit}`)
-            .then(r => r.json())
-            .then(data => {
-                if (!data || data.length === 0) {
-                    zscoreTable.innerHTML += `<tr><td colspan='3' style='text-align:center;color:#aaa'>No data available</td></tr>`;
-                    hideLoading();
-                    return;
-                }
-                data.forEach(d => {
-                    zscoreTable.innerHTML += `
-                        <tr>
-                            <td>${d.username}</td>
-                            <td>${d.count}</td>
-                            <td>${d.anomalous ? "YES" : "NO"}</td>
-                        </tr>`;
-                });
-                hideLoading();
-            })
-            .catch(() => {
-                zscoreTable.innerHTML += `<tr><td colspan='3' style='text-align:center;color:#f55'>Error loading data</td></tr>`;
-                hideLoading();
-            });
+        loadRbaZScorePage(rbaCurrentPage);
+        return Promise.resolve();
     } else {
         fetch(`/auth/analytics/zscore-anomalies?dataset=${getDataset()}&threshold=${th}`)
             .then(r => r.json())
