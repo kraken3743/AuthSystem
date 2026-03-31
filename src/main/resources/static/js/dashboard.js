@@ -535,13 +535,14 @@ function runRbaAccuracyComparison() {
             const accuracy = result.accuracy;
             // Prepare data for grouped bar chart: Anomaly Detection vs. RBA Ground Truth
             const labels = [
-                'Laplace', 'Gaussian', 'Z-Score', 'No Algorithm'
+                'Laplace', 'Gaussian', 'Z-Score', 'Anomaly Detection (5)', 'Anomaly Detection (10)'
             ];
             const anomalyAcc = [
                 accuracy['Laplace'],
                 accuracy['Gaussian'],
                 accuracy['Z-Score'],
-                accuracy['No Algorithm']
+                accuracy['Anomaly Detection (5)'],
+                accuracy['Anomaly Detection (10)']
             ];
             // RBA ground truth: percent of attack and benign
             const gt = result.groundTruth;
@@ -671,4 +672,39 @@ function showRbaAccuracyChart(data) {
             }
         }
     });
+}
+
+function runRbaMetricsComparison() {
+    showLoading();
+    fetch('/auth/analytics/rba/metrics-comparison?limit=100')
+        .then(r => r.json())
+        .then(result => {
+            const metrics = result.metrics;
+            let html = `<table style="width:100%;color:#fff;background:#222;border-radius:8px;">
+                <tr style="background:#333;font-weight:bold;">
+                    <th>Algorithm</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1 Score</th>
+                    <th>False Positives</th>
+                    <th>False Negatives</th>
+                </tr>`;
+            for (const algo of ["Laplace", "Gaussian", "Z-Score", "Anomaly Detection (5)", "Anomaly Detection (10)"]) {
+                const m = metrics[algo];
+                html += `<tr>
+                    <td>${algo}</td>
+                    <td>${(m.precision*100).toFixed(1)}%</td>
+                    <td>${(m.recall*100).toFixed(1)}%</td>
+                    <td>${(m.f1*100).toFixed(1)}%</td>
+                    <td>${m.false_positives}</td>
+                    <td>${m.false_negatives}</td>
+                </tr>`;
+            }
+            html += '</table>';
+            document.getElementById('rbaMetricsTable').innerHTML = html;
+        })
+        .catch(() => {
+            document.getElementById('rbaMetricsTable').innerHTML = '<span style="color:#f55">Error loading metrics</span>';
+        })
+        .finally(hideLoading);
 }

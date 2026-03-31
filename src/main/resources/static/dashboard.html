@@ -59,6 +59,7 @@
     <button onclick="showTab('users')">User Management</button>
     <button onclick="showTab('zscore')">Z-Score Anomaly</button>
     <button onclick="showTab('rba-accuracy')">Algorithm Accuracy (RBA)</button>
+    <button onclick="showTab('rba-metrics')">Algorithm Metrics (RBA)</button>
 </div>
 
 <!-- AUDIT LOGS -->
@@ -105,6 +106,12 @@
 <div id="rba-accuracy" class="tab">
     <button onclick="runRbaAccuracyComparison()">Run Accuracy Comparison</button>
     <canvas id="rbaAccuracyChart" style="margin-top:30px;"></canvas>
+</div>
+
+<!-- RBA METRICS TAB -->
+<div id="rba-metrics" class="tab">
+    <button onclick="runRbaMetricsComparison()">Run Metrics Comparison</button>
+    <div id="rbaMetricsTable" style="margin-top:30px;"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

@@ -1,0 +1,222 @@
+# Project Overview: Privacy-Preserving Authentication & Login Anomaly Detection System
+
+This project is a full-stack authentication and analytics system built with Java Spring Boot (backend) and a JavaScript/HTML/CSS frontend. It provides secure user authentication, role-based access control, and a privacy-preserving analytics dashboard for monitoring login anomalies using differential privacy and statistical methods. The backend exposes REST APIs that can be called directly from the terminal for analytics and admin operations.
+
+---
+
+## Main Components and File Roles
+
+### 1. Backend (Java, Spring Boot)
+
+#### - `src/main/java/com/authsys/controller/AnalyticsController.java`
+Handles all analytics and anomaly detection endpoints. Provides REST APIs for:
+- Differential privacy analytics (Laplace, Gaussian)
+- Z-Score anomaly detection
+- RBA dataset analytics (accuracy, metrics, pagination)
+- Time-window analytics
+- All endpoints return JSON and can be called directly with curl (see below)
+- Example endpoint:
+```java
+@GetMapping("/rba/accuracy-comparison")
+public Map<String, Object> rbaAccuracyComparison(...) { ... }
+```
+
+#### - `src/main/java/com/authsys/controller/AdminController.java`
+Manages admin-only endpoints for user management:
+- List users, change roles, suspend/reactivate/delete users
+- Example:
+```java
+@PostMapping("/suspend-user")
+public void suspendUser(@RequestParam String username) { ... }
+```
+
+#### - `src/main/java/com/authsys/controller/AuthController.java`
+Handles registration and login endpoints for all users.
+- Example:
+```java
+@PostMapping("/register")
+public ResponseEntity<?> register(@RequestBody UserDto userDto) { ... }
+```
+
+#### - `src/main/java/com/authsys/controller/CertAnalyticsController.java`
+Analytics endpoints for the CERT dataset (external dataset support).
+
+#### - `src/main/java/com/authsys/model/User.java`
+Defines the User entity, including fields for username, password, role, and suspension status. Used for authentication and admin management.
+
+#### - `src/main/java/com/authsys/model/RbaLoginLog.java`
+Defines the RBA login log entity for the RBA dataset. Used for analytics and anomaly detection.
+
+#### - `src/main/java/com/authsys/service/AuthService.java`
+Implements business logic for authentication, privacy, and analytics. Handles noise addition, anomaly logic, and user management.
+- Example:
+```java
+public int addLaplaceNoise(int value, double epsilon) { ... }
+```
+
+#### - `src/main/java/com/authsys/privacy/DifferentialPrivacyUtil.java`
+Utility class for Laplace, Gaussian, and Z-Score calculations. Used by service and controller layers.
+- Example:
+```java
+public static double laplaceNoise(double scale) { ... }
+```
+
+#### - `src/main/java/com/authsys/repository/`
+Spring Data JPA repositories for database access (UserRepository, LoginLogRepository, etc).
+
+#### - `src/main/resources/application.properties`
+Spring Boot configuration (DB connection, server port, etc).
+
+#### - `src/main/resources/static/js/dashboard.js`
+Main frontend logic for the dashboard:
+- Fetches analytics data from backend
+- Renders charts (Chart.js), tables, and handles pagination
+- Implements privacy/noise logic in JS for demo
+- Example:
+```js
+function runRbaAccuracyComparison() {
+    fetch('/auth/analytics/rba/accuracy-comparison?limit=100')
+        .then(r => r.json())
+        .then(result => { ... });
+}
+```
+
+#### - `src/main/resources/static/dashboard.html`
+Main dashboard UI:
+- Tabs for Audit Logs, Anomaly Detection, Time-Window, Z-Score, Algorithm Accuracy, Algorithm Metrics, User Management
+- Loads dashboard.js and Chart.js
+
+#### - `src/main/resources/static/css/style.css`
+Custom styles for dashboard, tables, buttons, loading overlays, etc.
+
+#### - `src/main/resources/static/js/auth.js`
+Handles login/registration page logic.
+
+#### - `src/main/resources/static/index.html`, `user.html`
+Landing and user profile pages.
+
+#### - `dataset/rba-small.csv`, `dataset/rba-small-import.csv`
+Sample RBA dataset for analytics and demo.
+
+---
+
+## How Each Function Works (Key Examples)
+
+### Backend Example: RBA Accuracy Comparison
+```java
+@GetMapping("/rba/accuracy-comparison")
+public Map<String, Object> rbaAccuracyComparison(...) {
+    // 1. Query RBA users and ground truth
+    // 2. For each user, compute noisy counts (Laplace, Gaussian), z-score
+    // 3. Predict anomaly for each method (thresholds)
+    // 4. Compare predictions to ground truth, count correct
+    // 5. Return accuracy for each method and ground truth stats
+}
+```
+
+### Frontend Example: Run RBA Accuracy Comparison
+```js
+function runRbaAccuracyComparison() {
+    fetch('/auth/analytics/rba/accuracy-comparison?limit=100')
+        .then(r => r.json())
+        .then(result => {
+            // Prepare data for grouped bar chart
+            // Show accuracy for Laplace, Gaussian, Z-Score, Anomaly Detection (5), (10)
+        });
+}
+```
+
+### Frontend Example: Pagination
+```js
+function renderRbaPaginationGeneric(tab, loadFn, totalKey = 'user-count') {
+    fetch(`/auth/analytics/rba/${totalKey}`)
+        .then(r => r.json())
+        .then(total => {
+            // Render Prev/Next and page numbers
+        });
+}
+```
+
+### Backend Example: Metrics Calculation
+```java
+// For each user:
+if (anomalyDetection5 && isAttack) anomaly5TP++;
+if (anomalyDetection5 && !isAttack) anomaly5FP++;
+if (!anomalyDetection5 && isAttack) anomaly5FN++;
+// ...
+// Then:
+precision = TP / (TP + FP);
+recall = TP / (TP + FN);
+f1 = 2 * precision * recall / (precision + recall);
+```
+
+---
+
+## File-by-File Summary
+
+- **README.md**: Project overview, features, tech stack, architecture, and setup instructions.
+- **HELP.md**: Additional help or FAQ (if present).
+- **pom.xml**: Maven build configuration.
+- **src/main/java/com/authsys/controller/**: All REST API controllers.
+- **src/main/java/com/authsys/model/**: Entity classes for database tables.
+- **src/main/java/com/authsys/service/**: Business logic and analytics.
+- **src/main/java/com/authsys/privacy/**: Differential privacy and statistical utilities.
+- **src/main/java/com/authsys/repository/**: JPA repositories for DB access.
+- **src/main/resources/static/dashboard.html**: Main dashboard UI.
+- **src/main/resources/static/js/dashboard.js**: Dashboard logic, data fetching, charting, and UI interactivity.
+- **src/main/resources/static/css/style.css**: Dashboard and UI styles.
+- **src/main/resources/static/js/auth.js**: Login/registration logic.
+- **src/main/resources/application.properties**: Spring Boot and DB config.
+- **dataset/**: Example datasets for analytics.
+
+---
+
+## How to Run
+1. Configure PostgreSQL and import the RBA dataset if needed.
+2. Update `application.properties` with your DB credentials.
+3. Build and run:
+```bash
+./mvnw spring-boot:run
+```
+4. Open the dashboard in your browser (default: http://localhost:8080/dashboard.html)
+
+---
+
+## Running Backend Analytics Directly from Terminal
+You can call any analytics or admin endpoint directly using `curl` (or httpie, Postman, etc). Examples:
+
+### Get RBA Accuracy Comparison (JSON)
+```bash
+curl -X GET "http://localhost:8080/auth/analytics/rba/accuracy-comparison?limit=100"
+```
+
+### Get RBA Metrics Comparison (JSON)
+```bash
+curl -X GET "http://localhost:8080/auth/analytics/rba/metrics-comparison?limit=100"
+```
+
+### Get Paginated RBA Failed Logins (page 1, 100 per page)
+```bash
+curl -X GET "http://localhost:8080/auth/analytics/rba/failed-logins?limit=100&offset=0"
+```
+
+### Get RBA Anomalies (threshold=10, page 2)
+```bash
+curl -X GET "http://localhost:8080/auth/analytics/rba/anomalies?threshold=10&limit=100&offset=100"
+```
+
+### Suspend a User (admin only)
+```bash
+curl -X POST "http://localhost:8080/auth/admin/suspend-user?username=testuser"
+```
+
+### List All Users (admin only)
+```bash
+curl -X GET "http://localhost:8080/auth/admin/users"
+```
+
+You can use these commands to test backend analytics and admin features without the frontend UI. For endpoints requiring authentication, use a tool like Postman or httpie with session/cookie support, or add authentication headers as needed.
+
+---
+
+For more details, see the code comments and the dashboard UI for live analytics and explanations.
