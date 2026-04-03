@@ -8,25 +8,25 @@ The system's core feature is its security analytics dashboard, which provides in
 
 ## 2. Core Features
 
-*   **User Authentication**: Secure user registration and login.
-*   **Role-Based Access Control (RBAC)**: Distinct `ADMIN` and `USER` roles. The first user to register automatically becomes an `ADMIN`.
-*   **Interactive Analytics Dashboard**: A feature-rich UI for administrators to monitor security metrics.
-*   **Login Auditing**: Logs every login attempt (both successful and failed) for auditing and analysis.
-*   **Differential Privacy**: Applies Laplace and Gaussian noise to analytics queries to protect user privacy. The dashboard allows selection between Laplace and Gaussian mechanisms, with customizable epsilon (ε) and delta (δ) values.
-*   **Anomaly Detection**:
-    *   **Threshold-Based**: Identifies users with a suspiciously high number of failed logins.
-    *   **Time-Window Analysis**: Tracks login events in a recent time window (e.g., 30 minutes) to detect sudden spikes in activity.
-    *   **Z-Score Based**: Detects users whose failed login counts are statistical outliers (configurable Z-score threshold).
-*   **Dual Dataset Support**: Can run analytics on either the internal application `login_logs` or an external `cert_login_logs` dataset.
+* **User Authentication**: Secure user registration and login.
+* **Role-Based Access Control (RBAC)**: Distinct `ADMIN` and `USER` roles. The first user to register automatically becomes an `ADMIN`.
+* **Interactive Analytics Dashboard**: A feature-rich UI for administrators to monitor security metrics.
+* **Login Auditing**: Logs every login attempt (both successful and failed) for auditing and analysis.
+* **Differential Privacy**: Applies Laplace and Gaussian noise to analytics queries to protect user privacy. The dashboard allows selection between Laplace and Gaussian mechanisms, with customizable epsilon (ε) and delta (δ) values.
+* **Anomaly Detection**:
+    * **Threshold-Based**: Identifies users with a suspiciously high number of failed logins.
+    * **Time-Window Analysis**: Tracks login events in a recent time window (e.g., 30 minutes) to detect sudden spikes in activity.
+    * **Z-Score Based**: Detects users whose failed login counts are statistical outliers (configurable Z-score threshold).
+* **Dual Dataset Support**: Can run analytics on either the internal application `login_logs` or an external `cert_login_logs` dataset.
 
 ## 3. Technology Stack
 
 | Component      | Technology                                       |
 |----------------|--------------------------------------------------|
-| **Backend**    | Java 17, Spring Boot 3.2.1, Spring Security, JPA |
-| **Database**   | PostgreSQL                                       |
-| **Frontend**   | HTML, CSS, JavaScript (ES6)                      |
-| **Charting**   | Chart.js                                         |
+| **Backend** | Java 17, Spring Boot 3.2.1, Spring Security, JPA |
+| **Database** | PostgreSQL                                       |
+| **Frontend** | HTML, CSS, JavaScript (ES6)                      |
+| **Charting** | Chart.js                                         |
 | **Build Tool** | Maven                                            |
 
 ## 4. System Architecture
@@ -37,21 +37,21 @@ The application follows a classic client-server architecture.
 
 The backend is a monolithic Spring Boot application responsible for business logic, data persistence, and serving the frontend.
 
-*   **Controllers (`com.authsys.controller`)**:
-    *   `AuthController`: Manages public-facing endpoints for user registration (`/auth/register`) and login (`/auth/login`).
-    *   `AdminController`: Provides restricted endpoints for user management (`/auth/admin/**`), such as listing users, changing roles, and deleting users.
-    *   `AnalyticsController`: Provides endpoints for privacy-preserving analytics and anomaly detection, including Z-Score based detection.
-    *   `CertAnalyticsController`: Provides analytics endpoints for CERT dataset.
+* **Controllers (`com.authsys.controller`)**:
+    * `AuthController`: Manages public-facing endpoints for user registration (`/auth/register`) and login (`/auth/login`).
+    * `AdminController`: Provides restricted endpoints for user management (`/auth/admin/**`), such as listing users, changing roles, and deleting users.
+    * `AnalyticsController`: Provides endpoints for privacy-preserving analytics and anomaly detection, including Z-Score based detection.
+    * `CertAnalyticsController`: Provides analytics endpoints for CERT dataset.
 
-*   **Service Layer (`com.authsys.service`)**:
-    *   `AuthService`: Implements business logic, including privacy mechanisms and Z-Score anomaly detection.
+* **Service Layer (`com.authsys.service`)**:
+    * `AuthService`: Implements business logic, including privacy mechanisms and Z-Score anomaly detection.
 
-*   **Privacy Utilities (`com.authsys.privacy`)**:
-    *   `DifferentialPrivacyUtil`: Implements Laplace, Gaussian, and Z-Score calculations.
+* **Privacy Utilities (`com.authsys.privacy`)**:
+    * `DifferentialPrivacyUtil`: Implements Laplace, Gaussian, and Z-Score calculations.
 
 ### Frontend
 
-*   **Dashboard**: Allows admins to select privacy mechanism (Laplace/Gaussian), epsilon, and delta. Z-Score anomaly detection is available as a separate tab with configurable threshold. All analytics and charts are labeled accordingly.
+* **Dashboard**: Allows admins to select privacy mechanism (Laplace/Gaussian), epsilon, and delta. Z-Score anomaly detection is available as a separate tab with configurable threshold. All analytics and charts are labeled accordingly.
 
 ## 5. Pipeline Diagram
 
@@ -81,11 +81,12 @@ graph TD
 
     %% Row 6
     API --> Viz[Visualization and Insights Admin]
+    
+    ## 6. How to Run
+    1.Configure PostgreSQL: Ensure you have a PostgreSQL instance running and create a database for the project.
 
-## 6. How to Run
-1. Configure PostgreSQL
-2. Update `application.properties`
-3. Run:
-```bash
-./mvn spring-boot:run
-```
+    2.Update Configuration: Update the src/main/resources/application.properties file with your database credentials.
+
+    3.Build and Run:
+    Bash
+    ./mvnw spring-boot:run
