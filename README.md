@@ -53,40 +53,50 @@ The backend is a monolithic Spring Boot application responsible for business log
 
 * **Dashboard**: Allows admins to select privacy mechanism (Laplace/Gaussian), epsilon, and delta. Z-Score anomaly detection is available as a separate tab with configurable threshold. All analytics and charts are labeled accordingly.
 
-## 5. Pipeline Diagram
+## 5. System Pipeline
 
-```mermaid
-graph TD
-    %% Row 1
-    Login[User Login and Register Event] --> Spring[Spring Boot Backend]
-    Spring --> Logs[Login Logs Ingestion]
+1. **User Interaction**
+   - Users register and log in through the web UI.
+   - Requests go to the Spring Boot backend over HTTPS.
 
-    %% Row 2
-    Spring --> Feature[Feature Engineering: Failed Login Count - Time Window Stats - User IP Data]
+2. **Authentication & Authorization**
+   - `AuthController` and `AuthService` handle registration, login, password hashing, and RBAC.
 
-    %% Row 3
-    Feature --> Privacy[Differential Privacy Mechanism: Laplace Noise - Gaussian Noise]
+3. **Logging & Data Ingestion**
+   - Every login attempt (success and failure) is written to the `login_logs` table.
+   - External datasets (CERT, RBA) are imported into their own tables (e.g., `cert_login_logs`, `rba_login_logs`).
 
-    %% Row 4
-    Privacy --> Anomaly[Anomaly Detection: Threshold Method - Z-Score - Future ML Models]
+4. **Feature Engineering**
+   - Aggregations compute features per user and time window, such as:
+     - total failed login count,
+     - failed logins in a sliding time window,
+     - IP-related features,
+     - RBA features where available.
 
-    %% Row 5
-    Anomaly --> Analytics[Analytics Aggregation]
-    Anomaly --> API[REST API Endpoints]
-    Anomaly --> Frontend[Frontend Dashboard Charts and UI]
+5. **Privacy Mechanisms**
+   - Analytics endpoints call `DifferentialPrivacyUtil` to add Laplace or Gaussian noise to aggregate statistics, controlled by ε and δ parameters from the dashboard.
 
-    %% Horizontal connections for Row 5
-    Analytics --> API
-    API --> Frontend
+6. **Anomaly Detection (Rule-based & Statistical)**
+   - **Threshold method:** flag users whose failed counts exceed a chosen cutoff.
+   - **Time-window IDS:** analyze spikes of failures in recent windows.
+   - **Z-Score method:** compute z-scores for failed counts and flag statistical outliers.
 
-    %% Row 6
-    API --> Viz[Visualization and Insights Admin]
-    
-    ## 6. How to Run
-    1.Configure PostgreSQL: Ensure you have a PostgreSQL instance running and create a database for the project.
+7. **Machine Learning on RBA Dataset**
+   - For the `rba_login_logs` dataset, additional ML models are applied:
+     - **Logistic Regression**:
+       - Uses engineered features (e.g., failed counts, time-window stats, IP indicators) to estimate P(attack | x).
+       - Prediction: attack if σ(w₀ + Σwᵢxᵢ) ≥ τ, where σ(z) = 1 / (1 + e^{-z}).
+     - **Random Forest**:
+       - Multiple small decision trees are trained on bootstrapped samples of the RBA data.
+       - Final prediction is the majority vote: mode(T₁(x), T₂(x), ..., Tₙ(x)).
+   - Backend endpoints expose per-user predictions and accuracy/metric comparisons; the “ML Anomaly (RBA)” tab in the dashboard consumes these APIs.
 
-    2.Update Configuration: Update the src/main/resources/application.properties file with your database credentials.
+8. **REST API Layer**
+   - All analytics (privacy-preserving aggregates, anomaly scores, and ML results) are served as JSON from `/auth/analytics/**` endpoints.
 
-    3.Build and Run:
-    Bash
-    ./mvnw spring-boot:run
+9. **Dashboard & Visualization**
+   - The frontend (HTML/JS + Chart.js) calls the REST APIs, renders tables and charts for:
+     - basic login statistics,
+     - threshold & Z-Score anomalies,
+     - RBA accuracy/metrics comparisons,
+     - ML-based anomaly detection on the RBA dataset.
