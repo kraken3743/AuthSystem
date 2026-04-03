@@ -56,15 +56,21 @@ The backend is a monolithic Spring Boot application responsible for business log
 ## 5. Pipeline Diagram
 
 ```mermaid
-graph TD;
-    A[User/Register/Login] --> B[Spring Boot Backend]
-    B --> C[Login Logs DB]
-    B --> D[Analytics Controller]
-    D --> E[Apply Differential Privacy (Laplace/Gaussian) or Z-Score]
-    E --> F[REST API]
-    F --> G[Dashboard Frontend]
-    G --> H[Chart.js Visualization]
-```
+graph TD
+    A[User (Register/Login)] --> B[Spring Boot Backend]
+    B --> C[Authentication Controller]
+    B --> D[Admin Controller]
+    B --> E[Analytics Controller]
+    C --> F[User Database (PostgreSQL)]
+    D --> F
+    E --> G[Login Logs Database]
+    E --> H[Apply Differential Privacy (Laplace/Gaussian)]
+    E --> I[Z-Score / Threshold / Time-Window Detection]
+    H --> J[Noisy Analytics Data]
+    I --> J
+    J --> K[REST API (JSON)]
+    K --> L[Dashboard Frontend (HTML/JS)]
+    L --> M[Chart.js Visualization]
 
 ## 6. How to Run
 1. Configure PostgreSQL

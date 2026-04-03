@@ -70,7 +70,7 @@ public class AuthService {
             return userOpt.get().getRole();
         }
 
-        // ❗ always log failed attempts
+        // always log failed attempts
         log.setSuccess(false);
         loginLogRepository.save(log);
         return "INVALID";
