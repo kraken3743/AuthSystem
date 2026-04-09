@@ -1,3 +1,191 @@
+// ========== PAGINATED ML ANOMALY (RBA) TAB ==========
+function loadMlRbaPaged(page = 1) {
+    showLoading();
+    const type = document.getElementById('mlRbaDataSource').value;
+    const pageSize = 100;
+    fetch(`/auth/analytics/rba/ml/results-json-paged?type=${type}&page=${page}&pageSize=${pageSize}`)
+        .then(r => r.json())
+        .then(data => {
+            const table = document.getElementById('mlRbaTable');
+            table.innerHTML = '<tr><th>User</th><th>Failed Count</th><th>Login Freq</th><th>Unique IPs</th><th>Avg RTT</th><th>LogReg Prob</th><th>LogReg Pred</th><th>RF Prob</th><th>RF Pred</th><th>Attack Label</th></tr>';
+            data.results.forEach(d => {
+                table.innerHTML += `<tr>
+                    <td>${d.user_id ?? d.username ?? ''}</td>
+                    <td>${d.failed_count ?? ''}</td>
+                    <td>${d.login_freq ?? ''}</td>
+                    <td>${d.unique_ips ?? ''}</td>
+                    <td>${d.avg_rtt !== undefined ? d.avg_rtt.toFixed(2) : ''}</td>
+                    <td>${d.logreg_prob !== undefined ? d.logreg_prob.toFixed(3) : ''}</td>
+                    <td>${d.logreg_pred !== undefined ? (d.logreg_pred ? 'YES' : 'NO') : ''}</td>
+                    <td>${d.rf_prob !== undefined ? d.rf_prob.toFixed(3) : ''}</td>
+                    <td>${d.rf_pred !== undefined ? (d.rf_pred ? 'YES' : 'NO') : ''}</td>
+                    <td>${d.is_attack_ip !== undefined ? (d.is_attack_ip ? 'YES' : 'NO') : ''}</td>
+                </tr>`;
+            });
+            // Pagination
+            const pagDiv = document.getElementById('mlRbaPagination');
+            const total = data.total || 0;
+            const totalPages = Math.ceil(total / pageSize);
+            let html = '';
+            if (totalPages > 1) {
+                for (let i = 1; i <= totalPages; ++i) {
+                    if (i === page) {
+                        html += `<span style="font-weight:bold;">${i}</span> `;
+                    } else {
+                        html += `<a href="#" onclick="loadMlRbaPaged(${i});return false;">${i}</a> `;
+                    }
+                }
+            }
+            pagDiv.innerHTML = html;
+        })
+        .catch(() => {
+            document.getElementById('mlRbaTable').innerHTML = '<tr><td colspan="10" style="color:#f55">Error loading data</td></tr>';
+        })
+        .finally(hideLoading);
+}
+
+// Hook up ML Anomaly (RBA) tab to load first page on tab click
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('button[onclick="showTab(\'ml-rba\')"]').addEventListener('click', function() {
+        loadMlRbaPaged(1);
+    });
+});
+// ================= RESULTS TAB (BAR CHARTS) =================
+function loadResultsTab() {
+    showLoading();
+    // Fetch all relevant results (ML, anomaly, zscore, DP, metrics)
+    Promise.all([
+        fetch('/auth/analytics/rba/ml/results-json').then(r => r.json()), // ml_results.json
+        fetch('/auth/analytics/rba/metrics-comparison').then(r => r.json()), // metrics
+        fetch('/auth/analytics/rba/accuracy-comparison').then(r => r.json()), // accuracy
+        fetch('/auth/analytics/rba/zscore-anomalies?threshold=2&limit=100').then(r => r.json()), // zscore
+        fetch('/auth/analytics/rba/anomalies?threshold=10&limit=100').then(r => r.json()) // anomaly
+    ]).then(([ml, metrics, accuracy, zscore, anomaly]) => {
+        // Prepare data for bar chart
+        const labels = ['LogReg (Raw)', 'RF (Raw)', 'LogReg (DP)', 'RF (DP)', 'Anomaly', 'Z-Score'];
+        // Example: use accuracy for each method (or count of anomalies)
+        const data = [
+            accuracy.accuracy?.Laplace ?? 0,
+            accuracy.accuracy?.Gaussian ?? 0,
+            (ml.filter(x => x.logreg_pred === 1).length / ml.length * 100) || 0,
+            (ml.filter(x => x.rf_pred === 1).length / ml.length * 100) || 0,
+            (anomaly.filter(x => x.anomalous).length / anomaly.length * 100) || 0,
+            (zscore.filter(x => x.anomalous).length / zscore.length * 100) || 0
+        ];
+        // Render bar chart
+        const ctx = document.getElementById('resultsBarChart').getContext('2d');
+        if (window.resultsBarChartInstance) window.resultsBarChartInstance.destroy();
+        window.resultsBarChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Detection Rate (%)',
+                    data: data,
+                    backgroundColor: [
+                        '#4cd964', '#36a2eb', '#f9c846', '#f55', '#888', '#a0a'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: true, text: 'Comparison of Detection Methods' }
+                },
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                }
+            }
+        });
+        hideLoading();
+    }).catch(() => {
+        hideLoading();
+        alert('Error loading results for summary tab.');
+    });
+}
+
+// Hook up tab load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('button[onclick="showTab(\'results\')"]').addEventListener('click', loadResultsTab);
+});
+function getMlDpParams() {
+    return {
+        method: document.getElementById('mlDpMethod').value,
+        epsilon: document.getElementById('mlDpEps').value,
+        delta: document.getElementById('mlDpDelta').value
+    };
+}
+
+function loadMlRbaLogisticDp() {
+    showLoading();
+    const { method, epsilon, delta } = getMlDpParams();
+    fetch(`/auth/analytics/rba/ml/logistic-dp?method=${method}&epsilon=${epsilon}&delta=${delta}`)
+        .then(r => r.json())
+        .then(data => {
+            const table = document.getElementById('mlRbaTable');
+            table.innerHTML = '<tr><th>User</th><th>Noisy Failed Count</th><th>Prob(Attack)</th><th>Predicted Attack</th></tr>';
+            data.forEach(d => {
+                table.innerHTML += `<tr><td>${d.username}</td><td>${d.failed_count_noisy.toFixed(2)}</td><td>${d.prob_attack.toFixed(3)}</td><td>${d.predicted_attack ? 'YES' : 'NO'}</td></tr>`;
+            });
+        })
+        .catch(() => {
+            document.getElementById('mlRbaTable').innerHTML = '<tr><td colspan="4" style="color:#f55">Error loading data</td></tr>';
+        })
+        .finally(hideLoading);
+}
+
+function loadMlRbaRandomForestDp() {
+    showLoading();
+    const { method, epsilon, delta } = getMlDpParams();
+    fetch(`/auth/analytics/rba/ml/randomforest-dp?method=${method}&epsilon=${epsilon}&delta=${delta}`)
+        .then(r => r.json())
+        .then(data => {
+            const table = document.getElementById('mlRbaTable');
+            table.innerHTML = '<tr><th>User</th><th>Noisy Failed Count</th><th>Predicted Attack</th></tr>';
+            data.forEach(d => {
+                table.innerHTML += `<tr><td>${d.username}</td><td>${d.failed_count_noisy.toFixed(2)}</td><td>${d.predicted_attack ? 'YES' : 'NO'}</td></tr>`;
+            });
+        })
+        .catch(() => {
+            document.getElementById('mlRbaTable').innerHTML = '<tr><td colspan="3" style="color:#f55">Error loading data</td></tr>';
+        })
+        .finally(hideLoading);
+}
+// ========== ML ANOMALY (RBA) TAB ==========
+function loadMlRbaLogistic() {
+    showLoading();
+    fetch('/auth/analytics/rba/ml/logistic')
+        .then(r => r.json())
+        .then(data => {
+            const table = document.getElementById('mlRbaTable');
+            table.innerHTML = '<tr><th>User</th><th>Failed Count</th><th>Prob(Attack)</th><th>Predicted Attack</th></tr>';
+            data.forEach(d => {
+                table.innerHTML += `<tr><td>${d.username}</td><td>${d.failed_count}</td><td>${d.prob_attack.toFixed(3)}</td><td>${d.predicted_attack ? 'YES' : 'NO'}</td></tr>`;
+            });
+        })
+        .catch(() => {
+            document.getElementById('mlRbaTable').innerHTML = '<tr><td colspan="4" style="color:#f55">Error loading data</td></tr>';
+        })
+        .finally(hideLoading);
+}
+
+function loadMlRbaRandomForest() {
+    showLoading();
+    fetch('/auth/analytics/rba/ml/randomforest')
+        .then(r => r.json())
+        .then(data => {
+            const table = document.getElementById('mlRbaTable');
+            table.innerHTML = '<tr><th>User</th><th>Failed Count</th><th>Predicted Attack</th></tr>';
+            data.forEach(d => {
+                table.innerHTML += `<tr><td>${d.username}</td><td>${d.failed_count}</td><td>${d.predicted_attack ? 'YES' : 'NO'}</td></tr>`;
+            });
+        })
+        .catch(() => {
+            document.getElementById('mlRbaTable').innerHTML = '<tr><td colspan="3" style="color:#f55">Error loading data</td></tr>';
+        })
+        .finally(hideLoading);
+}
 let timeChartInstance = null;
 
 /* ================= TAB HANDLER ================= */
@@ -689,16 +877,39 @@ function runRbaMetricsComparison() {
                     <th>False Positives</th>
                     <th>False Negatives</th>
                 </tr>`;
+            // Existing algorithms first
             for (const algo of ["Laplace", "Gaussian", "Z-Score", "Anomaly Detection (5)", "Anomaly Detection (10)"]) {
                 const m = metrics[algo];
-                html += `<tr>
-                    <td>${algo}</td>
-                    <td>${(m.precision*100).toFixed(1)}%</td>
-                    <td>${(m.recall*100).toFixed(1)}%</td>
-                    <td>${(m.f1*100).toFixed(1)}%</td>
-                    <td>${m.false_positives}</td>
-                    <td>${m.false_negatives}</td>
-                </tr>`;
+                if (m) {
+                    html += `<tr>
+                        <td>${algo}</td>
+                        <td>${(m.precision*100).toFixed(1)}%</td>
+                        <td>${(m.recall*100).toFixed(1)}%</td>
+                        <td>${(m.f1*100).toFixed(1)}%</td>
+                        <td>${m.false_positives}</td>
+                        <td>${m.false_negatives}</td>
+                    </tr>`;
+                }
+            }
+            // Add ML metrics (LogReg, RF, DP) below
+            const mlAlgos = [
+                { key: "LogReg (Raw)", label: "Logistic Regression (Raw)" },
+                { key: "RF (Raw)", label: "Random Forest (Raw)" },
+                { key: "LogReg (DP)", label: "Logistic Regression (DP)" },
+                { key: "RF (DP)", label: "Random Forest (DP)" }
+            ];
+            for (const {key, label} of mlAlgos) {
+                const m = metrics[key];
+                if (m) {
+                    html += `<tr>
+                        <td>${label}</td>
+                        <td>${(m.precision*100).toFixed(1)}%</td>
+                        <td>${(m.recall*100).toFixed(1)}%</td>
+                        <td>${(m.f1*100).toFixed(1)}%</td>
+                        <td>${m.false_positives}</td>
+                        <td>${m.false_negatives}</td>
+                    </tr>`;
+                }
             }
             html += '</table>';
             document.getElementById('rbaMetricsTable').innerHTML = html;

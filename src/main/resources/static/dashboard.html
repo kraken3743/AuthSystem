@@ -60,6 +60,22 @@
     <button onclick="showTab('zscore')">Z-Score Anomaly</button>
     <button onclick="showTab('rba-accuracy')">Algorithm Accuracy (RBA)</button>
     <button onclick="showTab('rba-metrics')">Algorithm Metrics (RBA)</button>
+    <button onclick="showTab('ml-rba')">ML Anomaly (RBA)</button>
+    <button onclick="showTab('results')">Results</button>
+<!-- RESULTS TAB -->
+<div id="results" class="tab" style="display:none">
+    <h3>Summary of All Results</h3>
+    <div>
+        <canvas id="resultsBarChart" style="max-width:800px;"></canvas>
+        <ul id="resultsExplanations" style="margin-top:20px">
+            <li><b>ML Models (Raw):</b> Shows predictions from logistic regression and random forest trained on original data.</li>
+            <li><b>ML Models (DP):</b> Shows predictions from models trained on data with differential privacy (Laplace/Gaussian noise).</li>
+            <li><b>Anomaly Detection:</b> Flags users with suspiciously high failed logins (threshold-based).</li>
+            <li><b>Z-Score:</b> Detects statistical outliers in failed login counts.</li>
+            <li><b>Algorithm Metrics:</b> Displays accuracy, precision, recall, and F1 for each method.</li>
+        </ul>
+    </div>
+</div>
 </div>
 
 <!-- AUDIT LOGS -->
@@ -115,6 +131,23 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="js/dashboard.js"></script>
+</div>
+
+<!-- ML ANOMALY (RBA) TAB -->
+<div id="ml-rba" class="tab" style="display:none">
+    <h3>ML-based Anomaly Detection (RBA Dataset)</h3>
+    <div style="margin-bottom:10px;">
+        <label>Data Source:</label>
+        <select id="mlRbaDataSource" onchange="loadMlRbaPaged(1)">
+            <option value="raw">Raw</option>
+            <option value="dp">Differential Privacy</option>
+        </select>
+    </div>
+    <table id="mlRbaTable"></table>
+    <div id="mlRbaPagination" style="margin-top:10px;"></div>
+</div>
+
 <script src="js/dashboard.js"></script>
 </body>
 </html>

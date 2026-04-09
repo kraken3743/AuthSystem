@@ -39,3 +39,7 @@ build/
 *.csv
 datasets/
 
+# ML results (do not commit model outputs)
+ml_results.json
+ml_results_dp.json
+

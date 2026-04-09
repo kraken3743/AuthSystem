@@ -19,6 +19,8 @@ The system's core feature is its security analytics dashboard, which provides in
     * **Z-Score Based**: Detects users whose failed login counts are statistical outliers (configurable Z-score threshold).
 * **Dual Dataset Support**: Can run analytics on either the internal application `login_logs` or an external `cert_login_logs` dataset.
 
+* **Machine Learning Anomaly Detection (RBA)**: Applies ML models (Logistic Regression, Random Forest) to the RBA dataset for advanced anomaly detection. Results are available via a dedicated dashboard tab and REST API endpoints.
+
 ## 3. Technology Stack
 
 | Component      | Technology                                       |
@@ -100,3 +102,23 @@ The backend is a monolithic Spring Boot application responsible for business log
      - threshold & Z-Score anomalies,
      - RBA accuracy/metrics comparisons,
      - ML-based anomaly detection on the RBA dataset.
+    - **Model Training:**
+       - The ML models (logistic regression, random forest) are pre-trained/fixed in the backend. No training occurs per request; only inference is performed using preset weights/trees.
+
+    - **API Endpoints:**
+       - `/auth/analytics/rba/ml/logistic`: Returns per-user attack probability and prediction using logistic regression (raw data, pre-trained/fixed weights).
+       - `/auth/analytics/rba/ml/randomforest`: Returns per-user attack prediction using a random forest ensemble (raw data, pre-trained/fixed trees).
+       - `/auth/analytics/rba/ml/logistic-dp?method=laplace|gaussian&epsilon=...&delta=...`: Returns per-user attack probability and prediction using logistic regression on differentially private (Laplace or Gaussian) data (pre-trained/fixed weights).
+       - `/auth/analytics/rba/ml/randomforest-dp?method=laplace|gaussian&epsilon=...&delta=...`: Returns per-user attack prediction using a random forest ensemble on differentially private data (pre-trained/fixed trees).
+      - ML-based anomaly detection on the RBA dataset (see new "ML Anomaly (RBA)" tab).
+
+   ## 10. ML Anomaly (RBA) Tab
+
+The dashboard now includes a dedicated tab for ML-based anomaly detection on the RBA dataset. This tab allows you to:
+
+- Run logistic regression and random forest models on the RBA login data (raw and differentially private versions).
+- View per-user attack probabilities and predictions for both raw and DP-trained models.
+- Select the DP mechanism (Laplace or Gaussian) and set ε, δ parameters for privacy.
+- Compare ML-based results with other analytics and anomaly detection methods.
+
+See the API endpoints above for programmatic access.
