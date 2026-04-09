@@ -1,12 +1,13 @@
 // ========== PAGINATED ML ANOMALY (RBA) TAB ==========
 function loadMlRbaPaged(page = 1) {
     showLoading();
-    const type = document.getElementById('mlRbaDataSource').value;
+    const table = document.getElementById('mlRbaTable');
+    const pagDiv = document.getElementById('mlRbaPagination');
     const pageSize = 100;
-    fetch(`/auth/analytics/rba/ml/results-json-paged?type=${type}&page=${page}&pageSize=${pageSize}`)
+    // Only show raw data (no Data Source selector)
+    fetch(`/auth/analytics/rba/ml/results-json-paged?type=raw&page=${page}&pageSize=${pageSize}`)
         .then(r => r.json())
         .then(data => {
-            const table = document.getElementById('mlRbaTable');
             table.innerHTML = '<tr><th>User</th><th>Failed Count</th><th>Login Freq</th><th>Unique IPs</th><th>Avg RTT</th><th>LogReg Prob</th><th>LogReg Pred</th><th>RF Prob</th><th>RF Pred</th><th>Attack Label</th></tr>';
             data.results.forEach(d => {
                 table.innerHTML += `<tr>
@@ -23,23 +24,22 @@ function loadMlRbaPaged(page = 1) {
                 </tr>`;
             });
             // Pagination
-            const pagDiv = document.getElementById('mlRbaPagination');
             const total = data.total || 0;
             const totalPages = Math.ceil(total / pageSize);
             let html = '';
             if (totalPages > 1) {
                 for (let i = 1; i <= totalPages; ++i) {
                     if (i === page) {
-                        html += `<span style="font-weight:bold;">${i}</span> `;
+                        html += `<span style=\"font-weight:bold;\">${i}</span> `;
                     } else {
-                        html += `<a href="#" onclick="loadMlRbaPaged(${i});return false;">${i}</a> `;
+                        html += `<a href=\"#\" onclick=\"loadMlRbaPaged(${i});return false;\">${i}</a> `;
                     }
                 }
             }
             pagDiv.innerHTML = html;
         })
         .catch(() => {
-            document.getElementById('mlRbaTable').innerHTML = '<tr><td colspan="10" style="color:#f55">Error loading data</td></tr>';
+            table.innerHTML = '<tr><td colspan=\"10\" style=\"color:#f55\">Error loading data</td></tr>';
         })
         .finally(hideLoading);
 }
@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('button[onclick="showTab(\'ml-rba\')"]').addEventListener('click', function() {
         loadMlRbaPaged(1);
     });
+    // Data Source selector removed; no event handler needed
 });
 // ================= RESULTS TAB (BAR CHARTS) =================
 function loadResultsTab() {
