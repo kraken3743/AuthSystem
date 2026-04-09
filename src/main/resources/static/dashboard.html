@@ -61,7 +61,14 @@
     <button onclick="showTab('rba-accuracy')">Algorithm Accuracy (RBA)</button>
     <button onclick="showTab('rba-metrics')">Algorithm Metrics (RBA)</button>
     <button onclick="showTab('ml-rba')">ML Anomaly (RBA)</button>
+    <button onclick="showTab('meta-model')">Meta-Model (Stacking)</button>
     <button onclick="showTab('results')">Results</button>
+</div>
+<!-- META-MODEL TAB (now outside .tabs for proper stacking) -->
+<div id="meta-model" class="tab" style="display:none">
+    <h3>Meta-Model (Stacking) Results</h3>
+    <table id="metaModelTable"></table>
+    <div id="metaModelPagination" style="margin-top:10px;"></div>
 </div>
 <!-- RESULTS TAB (now outside .tabs for proper stacking) -->
 <div id="results" class="tab" style="display:none">
@@ -123,6 +130,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="js/dashboard.js"></script>
+<script src="js/meta_model.js"></script>
 </div>
 
 <!-- ML ANOMALY (RBA) TAB -->
