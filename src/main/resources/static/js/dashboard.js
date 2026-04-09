@@ -53,57 +53,77 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 // ================= RESULTS TAB (BAR CHARTS) =================
 function loadResultsTab() {
-    showLoading();
-    // Fetch all relevant results (ML, anomaly, zscore, DP, metrics)
-    Promise.all([
-        fetch('/auth/analytics/rba/ml/results-json').then(r => r.json()), // ml_results.json
-        fetch('/auth/analytics/rba/metrics-comparison').then(r => r.json()), // metrics
-        fetch('/auth/analytics/rba/accuracy-comparison').then(r => r.json()), // accuracy
-        fetch('/auth/analytics/rba/zscore-anomalies?threshold=2&limit=100').then(r => r.json()), // zscore
-        fetch('/auth/analytics/rba/anomalies?threshold=10&limit=100').then(r => r.json()) // anomaly
-    ]).then(([ml, metrics, accuracy, zscore, anomaly]) => {
-        // Prepare data for bar chart
-        const labels = ['LogReg (Raw)', 'RF (Raw)', 'LogReg (DP)', 'RF (DP)', 'Anomaly', 'Z-Score'];
-        // Example: use accuracy for each method (or count of anomalies)
-        const data = [
-            accuracy.accuracy?.Laplace ?? 0,
-            accuracy.accuracy?.Gaussian ?? 0,
-            (ml.filter(x => x.logreg_pred === 1).length / ml.length * 100) || 0,
-            (ml.filter(x => x.rf_pred === 1).length / ml.length * 100) || 0,
-            (anomaly.filter(x => x.anomalous).length / anomaly.length * 100) || 0,
-            (zscore.filter(x => x.anomalous).length / zscore.length * 100) || 0
-        ];
-        // Render bar chart
-        const ctx = document.getElementById('resultsBarChart').getContext('2d');
-        if (window.resultsBarChartInstance) window.resultsBarChartInstance.destroy();
-        window.resultsBarChartInstance = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Detection Rate (%)',
-                    data: data,
-                    backgroundColor: [
-                        '#4cd964', '#36a2eb', '#f9c846', '#f55', '#888', '#a0a'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: false },
-                    title: { display: true, text: 'Comparison of Detection Methods' }
-                },
-                scales: {
-                    y: { beginAtZero: true, max: 100 }
-                }
-            }
+    // Hardcoded metrics data for RBA dataset (from screenshot)
+    const metrics = [
+        { algorithm: 'Laplace', precision: 0.206, recall: 0.389, f1: 0.269, fp: 27, fn: 11 },
+        { algorithm: 'Gaussian', precision: 0.212, recall: 0.389, f1: 0.275, fp: 26, fn: 11 },
+        { algorithm: 'Z-Score', precision: 1.0, recall: 0.056, f1: 0.105, fp: 0, fn: 17 },
+        { algorithm: 'Anomaly Detection (5)', precision: 0.212, recall: 0.389, f1: 0.275, fp: 26, fn: 11 },
+        { algorithm: 'Anomaly Detection (10)', precision: 0.24, recall: 0.333, f1: 0.279, fp: 19, fn: 12 },
+        { algorithm: 'Logistic Regression (Raw)', precision: 0.212, recall: 0.389, f1: 0.275, fp: 26, fn: 11 },
+        { algorithm: 'Random Forest (Raw)', precision: 0.313, recall: 0.278, f1: 0.294, fp: 11, fn: 13 },
+        { algorithm: 'Logistic Regression (DP)', precision: 0.206, recall: 0.389, f1: 0.269, fp: 27, fn: 11 },
+        { algorithm: 'Random Forest (DP)', precision: 0.389, recall: 0.389, f1: 0.278, fp: 11, fn: 11 }
+    ];
+    const container = document.getElementById('metricsPieChartsContainer');
+    container.innerHTML = '';
+    const metricLabels = [
+        { key: 'precision', label: 'Precision', desc: 'Precision shows the proportion of correct precision predictions for this algorithm.' },
+        { key: 'recall', label: 'Recall', desc: 'Recall shows the proportion of correct recall predictions for this algorithm.' },
+        { key: 'f1', label: 'F1 Score', desc: 'F1 Score is the harmonic mean of precision and recall.' }
+    ];
+    metrics.forEach((alg, idx) => {
+        // Algorithm block
+        const block = document.createElement('div');
+        block.className = 'metrics-algorithm-block';
+        block.innerHTML = `<div class="metrics-algorithm-title">${alg.algorithm}</div>`;
+        // Piecharts row
+        const row = document.createElement('div');
+        row.className = 'metrics-piechart-row';
+        metricLabels.forEach(metric => {
+            const value = Math.round((alg[metric.key] || 0) * 1000) / 10; // percent
+            const other = 100 - value;
+            const chartId = `pie_${idx}_${metric.key}`;
+            const card = document.createElement('div');
+            card.className = 'metrics-piechart-card';
+            card.innerHTML = `
+                <canvas id="${chartId}" width="120" height="120"></canvas>
+                <div class="metrics-piechart-label">${metric.label}</div>
+                <div class="metrics-piechart-details"><b>${metric.label}:</b> ${value}%</div>
+                <div class="metrics-piechart-details"><b>False Positives:</b> ${alg.fp}</div>
+                <div class="metrics-piechart-details"><b>False Negatives:</b> ${alg.fn}</div>
+                <div class="metrics-piechart-desc">${metric.desc}</div>
+            `;
+            row.appendChild(card);
+            setTimeout(() => {
+                new Chart(document.getElementById(chartId).getContext('2d'), {
+                    type: 'pie',
+                    data: {
+                        labels: [`${metric.label}`, `Other`],
+                        datasets: [{
+                            data: [value, other],
+                            backgroundColor: [
+                                '#4cd964', '#22283a'
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#222738'
+                        }]
+                    },
+                    options: {
+                        responsive: false,
+                        plugins: {
+                            legend: { display: false },
+                            title: { display: false }
+                        },
+                        cutout: '60%'
+                    }
+                });
+            }, 0);
         });
-        hideLoading();
-    }).catch(() => {
-        hideLoading();
-        alert('Error loading results for summary tab.');
+        block.appendChild(row);
+        container.appendChild(block);
     });
+    hideLoading();
 }
 
 // Hook up tab load

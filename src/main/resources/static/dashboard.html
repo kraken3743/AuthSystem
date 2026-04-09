@@ -62,23 +62,11 @@
     <button onclick="showTab('rba-metrics')">Algorithm Metrics (RBA)</button>
     <button onclick="showTab('ml-rba')">ML Anomaly (RBA)</button>
     <button onclick="showTab('results')">Results</button>
-<!-- RESULTS TAB -->
-<div id="results" class="tab" style="display:none">
-    <h3>Summary of All Results</h3>
-    <div>
-        <canvas id="resultsBarChart" style="max-width:800px;"></canvas>
-        <div id="resultsBarChartExplanation"></div>
-        <canvas id="resultsMetricsChart" style="max-width:800px; margin-top:30px;"></canvas>
-        <div id="resultsMetricsChartExplanation"></div>
-        <ul id="resultsExplanations" style="margin-top:20px">
-            <li><b>ML Models (Raw):</b> Shows predictions from logistic regression and random forest trained on original data.</li>
-            <li><b>ML Models (DP):</b> Shows predictions from models trained on data with differential privacy (Laplace/Gaussian noise).</li>
-            <li><b>Anomaly Detection:</b> Flags users with suspiciously high failed logins (threshold-based).</li>
-            <li><b>Z-Score:</b> Detects statistical outliers in failed login counts.</li>
-            <li><b>Algorithm Metrics:</b> Displays accuracy, precision, recall, and F1 for each method.</li>
-        </ul>
-    </div>
 </div>
+<!-- RESULTS TAB (now outside .tabs for proper stacking) -->
+<div id="results" class="tab" style="display:none">
+    <h3>Algorithm Metrics Comparison</h3>
+    <div id="metricsPieChartsContainer" class="metrics-piecharts-container"></div>
 </div>
 
 <!-- AUDIT LOGS -->
