@@ -393,6 +393,17 @@ public class AnalyticsController {
     // ---------------- RBA METRICS COMPARISON (PRECISION, RECALL, F1, FP, FN) ----------------
     @GetMapping("/rba/metrics-comparison")
     public Map<String, Object> rbaMetricsComparison(@RequestParam(defaultValue = "100") int limit) {
+        // --- Meta-Model (Stacking) metrics (calculated directly from meta_model_results) ---
+        String metaAllSql = "SELECT meta_pred, is_attack_ip FROM meta_model_results";
+        List<Map<String, Object>> metaRowsAll = jdbc.queryForList(metaAllSql);
+        int metaTP = 0, metaFP = 0, metaFN = 0;
+        for (Map<String, Object> row : metaRowsAll) {
+            int metaPred = row.get("meta_pred") == null ? 0 : ((Number)row.get("meta_pred")).intValue();
+            int isAttackIp = row.get("is_attack_ip") == null ? 0 : ((Number)row.get("is_attack_ip")).intValue();
+            if (metaPred == 1 && isAttackIp == 1) metaTP++;
+            if (metaPred == 1 && isAttackIp == 0) metaFP++;
+            if (metaPred == 0 && isAttackIp == 1) metaFN++;
+        }
         double laplaceThreshold = 3;
         int anomalyThreshold = 3;
         double zscoreThreshold = 2;
@@ -437,6 +448,7 @@ public class AnalyticsController {
             String username = (String) user.get("username");
             boolean isAttack = Boolean.TRUE.equals(user.get("is_attack_ip"));
             int count = lapCounts.getOrDefault(username, 0);
+
             double laplaceNoise = -laplaceScale * Math.signum(rng.nextDouble() - 0.5) * Math.log(1 - 2 * Math.abs(rng.nextDouble() - 0.5));
             double laplaceNoisyCount = count + laplaceNoise;
             boolean laplaceAnomaly = laplaceNoisyCount >= laplaceThreshold;
@@ -561,6 +573,15 @@ public class AnalyticsController {
             "f1", (safeDiv.apply(rfDpTP, rfDpTP+rfDpFP)+safeDiv.apply(rfDpTP, rfDpTP+rfDpFN))==0?0:2*safeDiv.apply(rfDpTP, rfDpTP+rfDpFP)*safeDiv.apply(rfDpTP, rfDpTP+rfDpFN)/(safeDiv.apply(rfDpTP, rfDpTP+rfDpFP)+safeDiv.apply(rfDpTP, rfDpTP+rfDpFN)),
             "false_positives", rfDpFP,
             "false_negatives", rfDpFN
+        ));
+
+        // --- Add Meta-Model (Stacking) metrics ---
+        metrics.put("Meta-Model (Stacking)", Map.of(
+            "precision", safeDiv.apply(metaTP, metaTP+metaFP),
+            "recall", safeDiv.apply(metaTP, metaTP+metaFN),
+            "f1", (safeDiv.apply(metaTP, metaTP+metaFP)+safeDiv.apply(metaTP, metaTP+metaFN))==0?0:2*safeDiv.apply(metaTP, metaTP+metaFP)*safeDiv.apply(metaTP, metaTP+metaFN)/(safeDiv.apply(metaTP, metaTP+metaFP)+safeDiv.apply(metaTP, metaTP+metaFN)),
+            "false_positives", metaFP,
+            "false_negatives", metaFN
         ));
         return Map.of("metrics", metrics);
     }

@@ -898,30 +898,20 @@ function runRbaMetricsComparison() {
                     <th>False Positives</th>
                     <th>False Negatives</th>
                 </tr>`;
-            // Existing algorithms first
-            for (const algo of ["Laplace", "Gaussian", "Z-Score", "Anomaly Detection (5)", "Anomaly Detection (10)"]) {
-                const m = metrics[algo];
-                if (m) {
-                    html += `<tr>
-                        <td>${algo}</td>
-                        <td>${(m.precision*100).toFixed(1)}%</td>
-                        <td>${(m.recall*100).toFixed(1)}%</td>
-                        <td>${(m.f1*100).toFixed(1)}%</td>
-                        <td>${m.false_positives}</td>
-                        <td>${m.false_negatives}</td>
-                    </tr>`;
-                }
-            }
-            // Add ML metrics (LogReg, RF, DP) below
-            const mlAlgos = [
-                { key: "LogReg (Raw)", label: "Logistic Regression (Raw)" },
-                { key: "RF (Raw)", label: "Random Forest (Raw)" },
-                { key: "LogReg (DP)", label: "Logistic Regression (DP)" },
-                { key: "RF (DP)", label: "Random Forest (DP)" }
+            // Render all metrics rows, preserving order for known algorithms, then any others (like meta-model)
+            const knownOrder = [
+                "Laplace", "Gaussian", "Z-Score", "Anomaly Detection (5)", "Anomaly Detection (10)",
+                "LogReg (Raw)", "RF (Raw)", "LogReg (DP)", "RF (DP)", "Meta-Model (Stacking)"
             ];
-            for (const {key, label} of mlAlgos) {
+            const rendered = new Set();
+            for (const key of knownOrder) {
                 const m = metrics[key];
                 if (m) {
+                    let label = key;
+                    if (key === "LogReg (Raw)") label = "Logistic Regression (Raw)";
+                    if (key === "RF (Raw)") label = "Random Forest (Raw)";
+                    if (key === "LogReg (DP)") label = "Logistic Regression (DP)";
+                    if (key === "RF (DP)") label = "Random Forest (DP)";
                     html += `<tr>
                         <td>${label}</td>
                         <td>${(m.precision*100).toFixed(1)}%</td>
@@ -930,6 +920,23 @@ function runRbaMetricsComparison() {
                         <td>${m.false_positives}</td>
                         <td>${m.false_negatives}</td>
                     </tr>`;
+                    rendered.add(key);
+                }
+            }
+            // Render any additional metrics (e.g., new/unknown algorithms)
+            for (const key in metrics) {
+                if (!rendered.has(key)) {
+                    const m = metrics[key];
+                    if (m) {
+                        html += `<tr>
+                            <td>${key}</td>
+                            <td>${(m.precision*100).toFixed(1)}%</td>
+                            <td>${(m.recall*100).toFixed(1)}%</td>
+                            <td>${(m.f1*100).toFixed(1)}%</td>
+                            <td>${m.false_positives}</td>
+                            <td>${m.false_negatives}</td>
+                        </tr>`;
+                    }
                 }
             }
             html += '</table>';
