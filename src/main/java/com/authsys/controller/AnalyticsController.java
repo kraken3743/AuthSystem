@@ -394,8 +394,8 @@ public class AnalyticsController {
     @GetMapping("/rba/metrics-comparison")
     public Map<String, Object> rbaMetricsComparison(@RequestParam(defaultValue = "100") int limit) {
         // --- Meta-Model (Stacking) metrics (calculated directly from meta_model_results) ---
-        String metaAllSql = "SELECT meta_pred, is_attack_ip FROM meta_model_results";
-        List<Map<String, Object>> metaRowsAll = jdbc.queryForList(metaAllSql);
+        String metaAllSql = "SELECT meta_pred, is_attack_ip FROM meta_model_results ORDER BY failed_count DESC LIMIT ?";
+        List<Map<String, Object>> metaRowsAll = jdbc.queryForList(metaAllSql, limit);
         int metaTP = 0, metaFP = 0, metaFN = 0;
         for (Map<String, Object> row : metaRowsAll) {
             int metaPred = row.get("meta_pred") == null ? 0 : ((Number)row.get("meta_pred")).intValue();
