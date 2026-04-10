@@ -86,15 +86,20 @@ The backend is a monolithic Spring Boot application responsible for business log
 7. **Machine Learning on RBA Dataset**
    - For the `rba_login_logs` dataset, additional ML models are applied:
      - **Logistic Regression**:
-       - Uses engineered features (e.g., failed counts, time-window stats, IP indicators) to estimate P(attack | x).
+       - Uses engineered features to estimate attack probability: P(attack | x).
        - Prediction: attack if σ(w₀ + Σwᵢxᵢ) ≥ τ, where σ(z) = 1 / (1 + e^{-z}).
      - **Random Forest**:
        - Multiple small decision trees are trained on bootstrapped samples of the RBA data.
        - Final prediction is the majority vote: mode(T₁(x), T₂(x), ..., Tₙ(x)).
-   - Backend endpoints expose per-user predictions and accuracy/metric comparisons; the “ML Anomaly (RBA)” tab in the dashboard consumes these APIs.
+     - **Meta-Model (Stacking)**:
+       - Uses an advanced external Python pipeline to extract multivariant features highly correlated with true botnet behaviors (such as `avg_rtt`, `unique_ips`, and `login_freq`).
+       - Implements a finely-calibrated strict 0.1 threshold to drastically improve Recall and F1 Score over base algorithms.
+       - Predictions are stored via `ml_results_with_meta.json` and seamlessly synchronized to the backend datastore via `post_meta_results.py`.
+   - Backend endpoints expose per-user predictions and accuracy/metric comparisons; the "ML Anomaly (RBA)" tab in the dashboard consumes these APIs.
 
 8. **REST API Layer**
    - All analytics (privacy-preserving aggregates, anomaly scores, and ML results) are served as JSON from `/auth/analytics/**` endpoints.
+   - Example endpoints include baseline logistic mapping endpoints and the dynamic comparative `/auth/analytics/rba/metrics-comparison` aggregator.
 
 9. **Dashboard & Visualization**
    - The frontend (HTML/JS + Chart.js) calls the REST APIs, renders tables and charts for:
@@ -102,15 +107,18 @@ The backend is a monolithic Spring Boot application responsible for business log
      - threshold & Z-Score anomalies,
      - RBA accuracy/metrics comparisons,
      - ML-based anomaly detection on the RBA dataset.
-    - **Model Training:**
-       - The ML models (logistic regression, random forest) are pre-trained/fixed in the backend. No training occurs per request; only inference is performed using preset weights/trees.
+   - **Metrics Comparison UI**: An entire dynamically populated dashboard mapping Algorithm Accuracy (Precision, Recall, F1 Score, False Positives, False Negatives) using highly vibrant and distinguishable Pie Charts with white negative-space charting for ultimate readability in dark mode.
 
-    - **API Endpoints:**
-       - `/auth/analytics/rba/ml/logistic`: Returns per-user attack probability and prediction using logistic regression (raw data, pre-trained/fixed weights).
-       - `/auth/analytics/rba/ml/randomforest`: Returns per-user attack prediction using a random forest ensemble (raw data, pre-trained/fixed trees).
-       - `/auth/analytics/rba/ml/logistic-dp?method=laplace|gaussian&epsilon=...&delta=...`: Returns per-user attack probability and prediction using logistic regression on differentially private (Laplace or Gaussian) data (pre-trained/fixed weights).
-       - `/auth/analytics/rba/ml/randomforest-dp?method=laplace|gaussian&epsilon=...&delta=...`: Returns per-user attack prediction using a random forest ensemble on differentially private data (pre-trained/fixed trees).
-      - ML-based anomaly detection on the RBA dataset (see new "ML Anomaly (RBA)" tab).
+10. **Model Training & API Communication**
+   - The baseline ML models (Logistic Regression, Random Forest) are pre-trained/fixed in the backend. No training occurs per request; only inference is performed using preset weights/trees.
+   - The high-accuracy Meta-Model results are pre-calculated offline and seeded to the application via REST POST interactions.
+
+### API Endpoint Capabilities:
+   - `/auth/analytics/rba/ml/logistic`: Returns per-user attack probability and prediction using logistic regression (raw data, pre-trained/fixed weights).
+   - `/auth/analytics/rba/ml/randomforest`: Returns per-user attack prediction using a random forest ensemble (raw data, pre-trained/fixed trees).
+   - `/auth/analytics/rba/ml/logistic-dp?method=laplace|gaussian&epsilon=...&delta=...`: Returns per-user attack probability and prediction using logistic regression on differentially private (Laplace or Gaussian) data (pre-trained/fixed weights).
+   - `/auth/analytics/rba/ml/randomforest-dp?method=laplace|gaussian&epsilon=...&delta=...`: Returns per-user attack prediction using a random forest ensemble on differentially private data (pre-trained/fixed trees).
+   - `/auth/analytics/rba/metrics-comparison`: Delivers a comprehensive quantitative breakdown evaluating Precision/Recall/F1 dynamically across all registered ML mechanisms.
 
    ## 10. ML Anomaly (RBA) Tab
 

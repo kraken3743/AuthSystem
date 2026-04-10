@@ -53,77 +53,141 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 // ================= RESULTS TAB (BAR CHARTS) =================
 function loadResultsTab() {
-    // Hardcoded metrics data for RBA dataset (from screenshot)
-    const metrics = [
-        { algorithm: 'Laplace', precision: 0.206, recall: 0.389, f1: 0.269, fp: 27, fn: 11 },
-        { algorithm: 'Gaussian', precision: 0.212, recall: 0.389, f1: 0.275, fp: 26, fn: 11 },
-        { algorithm: 'Z-Score', precision: 1.0, recall: 0.056, f1: 0.105, fp: 0, fn: 17 },
-        { algorithm: 'Anomaly Detection (5)', precision: 0.212, recall: 0.389, f1: 0.275, fp: 26, fn: 11 },
-        { algorithm: 'Anomaly Detection (10)', precision: 0.24, recall: 0.333, f1: 0.279, fp: 19, fn: 12 },
-        { algorithm: 'Logistic Regression (Raw)', precision: 0.212, recall: 0.389, f1: 0.275, fp: 26, fn: 11 },
-        { algorithm: 'Random Forest (Raw)', precision: 0.313, recall: 0.278, f1: 0.294, fp: 11, fn: 13 },
-        { algorithm: 'Logistic Regression (DP)', precision: 0.206, recall: 0.389, f1: 0.269, fp: 27, fn: 11 },
-        { algorithm: 'Random Forest (DP)', precision: 0.389, recall: 0.389, f1: 0.278, fp: 11, fn: 11 }
-    ];
-    const container = document.getElementById('metricsPieChartsContainer');
-    container.innerHTML = '';
-    const metricLabels = [
-        { key: 'precision', label: 'Precision', desc: 'Precision shows the proportion of correct precision predictions for this algorithm.' },
-        { key: 'recall', label: 'Recall', desc: 'Recall shows the proportion of correct recall predictions for this algorithm.' },
-        { key: 'f1', label: 'F1 Score', desc: 'F1 Score is the harmonic mean of precision and recall.' }
-    ];
-    metrics.forEach((alg, idx) => {
-        // Algorithm block
-        const block = document.createElement('div');
-        block.className = 'metrics-algorithm-block';
-        block.innerHTML = `<div class="metrics-algorithm-title">${alg.algorithm}</div>`;
-        // Piecharts row
-        const row = document.createElement('div');
-        row.className = 'metrics-piechart-row';
-        metricLabels.forEach(metric => {
-            const value = Math.round((alg[metric.key] || 0) * 1000) / 10; // percent
-            const other = 100 - value;
-            const chartId = `pie_${idx}_${metric.key}`;
-            const card = document.createElement('div');
-            card.className = 'metrics-piechart-card';
-            card.innerHTML = `
-                <canvas id="${chartId}" width="120" height="120"></canvas>
-                <div class="metrics-piechart-label">${metric.label}</div>
-                <div class="metrics-piechart-details"><b>${metric.label}:</b> ${value}%</div>
-                <div class="metrics-piechart-details"><b>False Positives:</b> ${alg.fp}</div>
-                <div class="metrics-piechart-details"><b>False Negatives:</b> ${alg.fn}</div>
-                <div class="metrics-piechart-desc">${metric.desc}</div>
-            `;
-            row.appendChild(card);
-            setTimeout(() => {
-                new Chart(document.getElementById(chartId).getContext('2d'), {
-                    type: 'pie',
+    showLoading();
+    fetch('/auth/analytics/rba/metrics-comparison?limit=100')
+        .then(response => response.json())
+        .then(data => {
+            const rawMetrics = data.metrics;
+            const metrics = Object.keys(rawMetrics).map(algo => ({
+                algorithm: algo,
+                precision: rawMetrics[algo].precision,
+                recall: rawMetrics[algo].recall,
+                f1: rawMetrics[algo].f1,
+                fp: rawMetrics[algo].false_positives,
+                fn: rawMetrics[algo].false_negatives
+            }));
+            
+            const container = document.getElementById('metricsPieChartsContainer');
+            container.innerHTML = '';
+            const metricLabels = [
+                { key: 'precision', label: 'Precision', desc: 'Precision shows the proportion of correct precision predictions for this algorithm.', color: '#ff3b30' },
+                { key: 'recall', label: 'Recall', desc: 'Recall shows the proportion of correct recall predictions for this algorithm.', color: '#007aff' },
+                { key: 'f1', label: 'F1 Score', desc: 'F1 Score is the harmonic mean of precision and recall.', color: '#34c759' }
+            ];
+            metrics.forEach((alg, idx) => {
+                // Algorithm block
+                const block = document.createElement('div');
+                block.className = 'metrics-algorithm-block';
+                block.innerHTML = `<div class="metrics-algorithm-title">${alg.algorithm}</div>`;
+                // Piecharts row
+                const row = document.createElement('div');
+                row.className = 'metrics-piechart-row';
+                metricLabels.forEach(metric => {
+                    const value = Math.round((alg[metric.key] || 0) * 1000) / 10; // percent
+                    const other = 100 - value;
+                    const chartId = `pie_${idx}_${metric.key}`;
+                    const card = document.createElement('div');
+                    card.className = 'metrics-piechart-card';
+                    card.innerHTML = `
+                        <canvas id="${chartId}" width="120" height="120"></canvas>
+                        <div class="metrics-piechart-label">${metric.label}</div>
+                        <div class="metrics-piechart-details"><b>${metric.label}:</b> ${value}%</div>
+                        <div class="metrics-piechart-details"><b>False Positives:</b> ${alg.fp}</div>
+                        <div class="metrics-piechart-details"><b>False Negatives:</b> ${alg.fn}</div>
+                        <div class="metrics-piechart-desc">${metric.desc}</div>
+                    `;
+                    row.appendChild(card);
+                    setTimeout(() => {
+                        new Chart(document.getElementById(chartId).getContext('2d'), {
+                            type: 'pie',
+                            data: {
+                                labels: [`${metric.label}`, `Other`],
+                                datasets: [{
+                                    data: [value, other],
+                                    backgroundColor: [
+                                        metric.color, '#ffffff'
+                                    ],
+                                    borderWidth: 0
+                                }]
+                            },
+                            options: {
+                                responsive: false,
+                                plugins: {
+                                    legend: { display: false },
+                                    title: { display: false }
+                                },
+                                cutout: '60%'
+                            }
+                        });
+                    }, 0);
+                });
+                block.appendChild(row);
+                container.appendChild(block);
+            });
+            
+            // Extraction for Comparative Bar Charts
+            const algoNames = metrics.map(m => m.algorithm);
+            const precisionScores = metrics.map(m => Math.round((m.precision || 0) * 1000) / 10);
+            const recallScores = metrics.map(m => Math.round((m.recall || 0) * 1000) / 10);
+            const f1Scores = metrics.map(m => Math.round((m.f1 || 0) * 1000) / 10);
+            
+            // Colorful palette generator
+            const palette = ['#ff3b30', '#ff9500', '#ffcc00', '#4cd964', '#5ac8fa', '#007aff', '#5856d6', '#ff2d55', '#a2845e'];
+            
+            function createComparativeChart(canvasId, label, dataArray, defaultPalette) {
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                if (window[canvasId + 'Instance']) window[canvasId + 'Instance'].destroy();
+                
+                // Color Meta-Model distinctly
+                const bgColors = algoNames.map((name, i) => name.includes("Meta-Model") ? '#ffd700' : defaultPalette[i % defaultPalette.length]);
+                const borders = algoNames.map(name => name.includes("Meta-Model") ? '#ffaa00' : 'rgba(255,255,255,0.2)');
+
+                window[canvasId + 'Instance'] = new Chart(ctx, {
+                    type: 'bar',
                     data: {
-                        labels: [`${metric.label}`, `Other`],
+                        labels: algoNames,
                         datasets: [{
-                            data: [value, other],
-                            backgroundColor: [
-                                '#4cd964', '#22283a'
-                            ],
-                            borderWidth: 2,
-                            borderColor: '#222738'
+                            label: label,
+                            data: dataArray,
+                            backgroundColor: bgColors,
+                            borderColor: borders,
+                            borderWidth: 1,
+                            borderRadius: 4
                         }]
                     },
                     options: {
-                        responsive: false,
+                        responsive: true,
                         plugins: {
                             legend: { display: false },
-                            title: { display: false }
+                            tooltip: { callbacks: { label: function(context) { return context.raw + '%'; } } }
                         },
-                        cutout: '60%'
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: { color: '#fff', callback: function(value){ return value + '%' } },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            },
+                            x: {
+                                ticks: { color: '#fff', maxRotation: 45, minRotation: 45 },
+                                grid: { display: false }
+                            }
+                        }
                     }
                 });
-            }, 0);
-        });
-        block.appendChild(row);
-        container.appendChild(block);
-    });
-    hideLoading();
+            }
+
+            // Render all three charts
+            createComparativeChart('precisionComparisonBarChart', 'Precision (%)', precisionScores, palette);
+            createComparativeChart('recallComparisonBarChart', 'Recall (%)', recallScores, palette);
+            createComparativeChart('f1ComparisonBarChart', 'F1 Score (%)', f1Scores, palette);
+            
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('metricsPieChartsContainer').innerHTML = '<div style="color:red;">Error loading metrics</div>';
+        })
+        .finally(() => hideLoading());
 }
 
 // Hook up tab load

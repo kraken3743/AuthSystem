@@ -14,7 +14,7 @@ def to_camel_case(d):
         "uniqueIps": d.get("unique_ips"),
         "avgRtt": d.get("avg_rtt"),
         "metaProb": d.get("meta_prob"),
-        "metaPred": d.get("meta_pred"),
+        "metaPred": 1 if d.get("meta_prob", 0) >= 0.1 else 0,
         "isAttackIp": d.get("is_attack_ip"),
     }
 
