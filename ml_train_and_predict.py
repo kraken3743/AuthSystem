@@ -3,6 +3,9 @@ import numpy as np
 import json
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from imblearn.over_sampling import SMOTE
 
 # Load data
 csv_path = 'dataset/rba-small.csv'
@@ -52,23 +55,58 @@ df = df.dropna(subset=features)
 
 print("Rows with NaN in features after drop:", df[features].isnull().any(axis=1).sum())
 
-X = df[features].values
-y = df['is_attack_ip'].values
+print("Class distribution in full dataset:")
+print(df['is_attack_ip'].value_counts())
 
-# Train models
-logreg = LogisticRegression()
-logreg.fit(X, y)
-logreg_probs = logreg.predict_proba(X)[:, 1]
+# --- Train/test split and save datasets ---
+train_df, test_df = train_test_split(df, test_size=0.3, random_state=42, stratify=df['is_attack_ip'])
+train_df.to_csv('ml_train_dataset.csv', index=False)
+test_df.to_csv('ml_test_dataset.csv', index=False)
+print(f"Train and test datasets saved: {len(train_df)} train, {len(test_df)} test rows.")
+
+print("Class distribution in train set:")
+print(train_df['is_attack_ip'].value_counts())
+
+X_train = train_df[features].values
+y_train = train_df['is_attack_ip'].values
+X_test = test_df[features].values
+y_test = test_df['is_attack_ip'].values
+
+# --- SMOTE oversampling on train set ---
+print("Applying SMOTE oversampling to training data...")
+sm = SMOTE(random_state=42)
+X_train_res, y_train_res = sm.fit_resample(X_train, y_train)
+print("Class distribution after SMOTE:")
+print(pd.Series(y_train_res).value_counts())
+
+# Train models with class_weight='balanced'
+logreg = LogisticRegression(class_weight='balanced', max_iter=1000)
+logreg.fit(X_train_res, y_train_res)
+logreg_probs = logreg.predict_proba(X_test)[:, 1]
 logreg_preds = (logreg_probs >= 0.5).astype(int)
 
-rf = RandomForestClassifier(n_estimators=10, random_state=42)
-rf.fit(X, y)
-rf_probs = rf.predict_proba(X)[:, 1]
+rf = RandomForestClassifier(n_estimators=100, random_state=42, class_weight='balanced')
+rf.fit(X_train_res, y_train_res)
+rf_probs = rf.predict_proba(X_test)[:, 1]
 rf_preds = (rf_probs >= 0.5).astype(int)
 
-# Save results
+# Evaluate and print metrics
+print("Logistic Regression Test Metrics:")
+print("Accuracy:", accuracy_score(y_test, logreg_preds))
+print("Precision:", precision_score(y_test, logreg_preds, zero_division=0))
+print("Recall:", recall_score(y_test, logreg_preds, zero_division=0))
+print("F1:", f1_score(y_test, logreg_preds, zero_division=0))
+
+print("Random Forest Test Metrics:")
+print("Accuracy:", accuracy_score(y_test, rf_preds))
+print("Precision:", precision_score(y_test, rf_preds, zero_division=0))
+print("Recall:", recall_score(y_test, rf_preds, zero_division=0))
+print("F1:", f1_score(y_test, rf_preds, zero_division=0))
+
+
+# Save results for test set
 ml_results = []
-for i, row in df.iterrows():
+for i, (_, row) in enumerate(test_df.iterrows()):
     ml_results.append({
         'user_id': row['user_id'],
         'failed_count': int(row['failed_count']),
@@ -82,7 +120,25 @@ for i, row in df.iterrows():
         'is_attack_ip': int(row['is_attack_ip'])
     })
 
-with open('ml_results.json', 'w') as f:
-    json.dump(ml_results, f, indent=2)
+# Save overall metrics for easy frontend integration
 
-print('ML results saved to ml_results.json')
+# Use keys matching frontend expectations
+metrics_summary = {
+    'LogReg (Raw)': {
+        'accuracy': accuracy_score(y_test, logreg_preds),
+        'precision': precision_score(y_test, logreg_preds, zero_division=0),
+        'recall': recall_score(y_test, logreg_preds, zero_division=0),
+        'f1': f1_score(y_test, logreg_preds, zero_division=0)
+    },
+    'RF (Raw)': {
+        'accuracy': accuracy_score(y_test, rf_preds),
+        'precision': precision_score(y_test, rf_preds, zero_division=0),
+        'recall': recall_score(y_test, rf_preds, zero_division=0),
+        'f1': f1_score(y_test, rf_preds, zero_division=0)
+    }
+}
+
+with open('ml_results.json', 'w') as f:
+    json.dump({'results': ml_results, 'metrics': metrics_summary}, f, indent=2)
+
+print('ML results and metrics saved to ml_results.json')

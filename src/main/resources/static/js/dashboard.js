@@ -63,60 +63,100 @@ function loadResultsTab() {
                 precision: rawMetrics[algo].precision,
                 recall: rawMetrics[algo].recall,
                 f1: rawMetrics[algo].f1,
+                accuracy: rawMetrics[algo].accuracy,
                 fp: rawMetrics[algo].false_positives,
                 fn: rawMetrics[algo].false_negatives
             }));
             
             const container = document.getElementById('metricsPieChartsContainer');
             container.innerHTML = '';
+            
+            // Beautiful modern gradients
             const metricLabels = [
-                { key: 'precision', label: 'Precision', desc: 'Precision shows the proportion of correct precision predictions for this algorithm.', color: '#ff3b30' },
-                { key: 'recall', label: 'Recall', desc: 'Recall shows the proportion of correct recall predictions for this algorithm.', color: '#007aff' },
-                { key: 'f1', label: 'F1 Score', desc: 'F1 Score is the harmonic mean of precision and recall.', color: '#34c759' }
+                { key: 'precision', label: 'Precision', desc: 'Proportion of correct precision predictions.', colorStart: '#ff4b4b', colorEnd: '#ff007f' },
+                { key: 'recall', label: 'Recall', desc: 'Proportion of correct recall predictions.', colorStart: '#00c6ff', colorEnd: '#0072ff' },
+                { key: 'f1', label: 'F1 Score', desc: 'Harmonic mean of precision and recall.', colorStart: '#11998e', colorEnd: '#38ef7d' },
+                { key: 'accuracy', label: 'Accuracy', desc: 'Proportion of correct predictions.', colorStart: '#f12711', colorEnd: '#f5af19' }
             ];
+            
             metrics.forEach((alg, idx) => {
-                // Algorithm block
                 const block = document.createElement('div');
                 block.className = 'metrics-algorithm-block';
                 block.innerHTML = `<div class="metrics-algorithm-title">${alg.algorithm}</div>`;
-                // Piecharts row
+                
                 const row = document.createElement('div');
                 row.className = 'metrics-piechart-row';
+                
                 metricLabels.forEach(metric => {
-                    const value = Math.round((alg[metric.key] || 0) * 1000) / 10; // percent
+                    const value = Math.round((alg[metric.key] || 0) * 1000) / 10;
                     const other = 100 - value;
                     const chartId = `pie_${idx}_${metric.key}`;
+                    
                     const card = document.createElement('div');
                     card.className = 'metrics-piechart-card';
+                    card.style.position = 'relative';
+                    card.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease';
+                    
+                    // Add hover effect
+                    card.onmouseover = () => { card.style.transform = 'translateY(-10px)'; };
+                    card.onmouseout = () => { card.style.transform = 'translateY(0px)'; };
+
                     card.innerHTML = `
-                        <canvas id="${chartId}" width="120" height="120"></canvas>
-                        <div class="metrics-piechart-label">${metric.label}</div>
-                        <div class="metrics-piechart-details"><b>${metric.label}:</b> ${value}%</div>
-                        <div class="metrics-piechart-details"><b>False Positives:</b> ${alg.fp}</div>
-                        <div class="metrics-piechart-details"><b>False Negatives:</b> ${alg.fn}</div>
-                        <div class="metrics-piechart-desc">${metric.desc}</div>
+                        <div style="position: relative; width: 140px; height: 140px; margin: 0 auto;">
+                            <canvas id="${chartId}"></canvas>
+                            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; color: #fff; pointer-events: none;">
+                                ${value}%
+                            </div>
+                        </div>
+                        <div class="metrics-piechart-label" style="background: -webkit-linear-gradient(${metric.colorStart}, ${metric.colorEnd}); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                            ${metric.label}
+                        </div>
+                        <div class="metrics-piechart-details" style="font-size: 0.9em;">
+                            <b>Accuracy:</b> ${(metric.key === 'accuracy') ? value : (Math.round((alg['accuracy'] || 0) * 1000) / 10)}%<br>
+                            <span style="color: #ff5c5c"><b>FP:</b> ${alg.fp}</span> | <span style="color: #4cd964"><b>FN:</b> ${alg.fn}</span>
+                        </div>
                     `;
                     row.appendChild(card);
+                    
                     setTimeout(() => {
-                        new Chart(document.getElementById(chartId).getContext('2d'), {
-                            type: 'pie',
+                        const ctx = document.getElementById(chartId).getContext('2d');
+                        const gradient = ctx.createLinearGradient(0, 0, 0, 140);
+                        gradient.addColorStop(0, metric.colorStart);
+                        gradient.addColorStop(1, metric.colorEnd);
+                        
+                        new Chart(ctx, {
+                            type: 'doughnut',
                             data: {
-                                labels: [`${metric.label}`, `Other`],
+                                labels: [metric.label, 'Other'],
                                 datasets: [{
                                     data: [value, other],
-                                    backgroundColor: [
-                                        metric.color, '#ffffff'
-                                    ],
-                                    borderWidth: 0
+                                    backgroundColor: [gradient, 'rgba(255, 255, 255, 0.05)'],
+                                    borderWidth: 0,
+                                    borderRadius: 8,
+                                    hoverOffset: 4
                                 }]
                             },
                             options: {
-                                responsive: false,
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                cutout: '75%', // Glassy thin ring
                                 plugins: {
                                     legend: { display: false },
-                                    title: { display: false }
+                                    tooltip: {
+                                        backgroundColor: 'rgba(20, 25, 35, 0.9)',
+                                        titleFont: { size: 14 },
+                                        bodyFont: { size: 14 },
+                                        padding: 12,
+                                        cornerRadius: 8,
+                                        displayColors: false
+                                    }
                                 },
-                                cutout: '60%'
+                                animation: {
+                                    animateScale: true,
+                                    animateRotate: true,
+                                    duration: 1500,
+                                    easing: 'easeOutQuart'
+                                }
                             }
                         });
                     }, 0);
@@ -125,23 +165,33 @@ function loadResultsTab() {
                 container.appendChild(block);
             });
             
-            // Extraction for Comparative Bar Charts
+            // Comparative Bar Charts
             const algoNames = metrics.map(m => m.algorithm);
             const precisionScores = metrics.map(m => Math.round((m.precision || 0) * 1000) / 10);
             const recallScores = metrics.map(m => Math.round((m.recall || 0) * 1000) / 10);
             const f1Scores = metrics.map(m => Math.round((m.f1 || 0) * 1000) / 10);
+            const accuracyScores = metrics.map(m => Math.round((m.accuracy || 0) * 1000) / 10);
             
-            // Colorful palette generator
-            const palette = ['#ff3b30', '#ff9500', '#ffcc00', '#4cd964', '#5ac8fa', '#007aff', '#5856d6', '#ff2d55', '#a2845e'];
-            
-            function createComparativeChart(canvasId, label, dataArray, defaultPalette) {
-                const ctx = document.getElementById(canvasId).getContext('2d');
+            function createComparativeChart(canvasId, label, dataArray, gradientStart, gradientEnd) {
+                const canvas = document.getElementById(canvasId);
+                const ctx = canvas.getContext('2d');
                 if (window[canvasId + 'Instance']) window[canvasId + 'Instance'].destroy();
                 
-                // Color Meta-Model distinctly
-                const bgColors = algoNames.map((name, i) => name.includes("Meta-Model") ? '#ffd700' : defaultPalette[i % defaultPalette.length]);
-                const borders = algoNames.map(name => name.includes("Meta-Model") ? '#ffaa00' : 'rgba(255,255,255,0.2)');
-
+                // Set fixed height to ensure massive bars look good
+                canvas.parentNode.style.height = '350px';
+                
+                // Create gradient for normal bars
+                const mainGradient = ctx.createLinearGradient(0, 0, 0, 350);
+                mainGradient.addColorStop(0, gradientStart);
+                mainGradient.addColorStop(1, gradientEnd);
+                
+                // Glow effect gradient for Meta-Model
+                const metaGradient = ctx.createLinearGradient(0, 0, 0, 350);
+                metaGradient.addColorStop(0, '#ffd700');
+                metaGradient.addColorStop(1, '#ffaa00');
+                
+                const bgColors = algoNames.map(name => name.includes("Meta-Model") ? metaGradient : mainGradient);
+                
                 window[canvasId + 'Instance'] = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -150,37 +200,48 @@ function loadResultsTab() {
                             label: label,
                             data: dataArray,
                             backgroundColor: bgColors,
-                            borderColor: borders,
-                            borderWidth: 1,
-                            borderRadius: 4
+                            borderWidth: 0,
+                            borderRadius: 6,
+                            barPercentage: 0.6,
+                            hoverBackgroundColor: '#ffffff'
                         }]
                     },
                     options: {
                         responsive: true,
+                        maintainAspectRatio: false,
                         plugins: {
                             legend: { display: false },
-                            tooltip: { callbacks: { label: function(context) { return context.raw + '%'; } } }
+                            tooltip: { 
+                                callbacks: { label: context => context.raw + '%' },
+                                backgroundColor: 'rgba(20, 25, 35, 0.9)',
+                                padding: 12,
+                                cornerRadius: 8
+                            }
                         },
                         scales: {
                             y: {
                                 beginAtZero: true,
                                 max: 100,
-                                ticks: { color: '#fff', callback: function(value){ return value + '%' } },
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                                ticks: { color: '#8892b0', font: { size: 13 }, callback: v => v + '%' },
+                                grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false }
                             },
                             x: {
-                                ticks: { color: '#fff', maxRotation: 45, minRotation: 45 },
-                                grid: { display: false }
+                                ticks: { color: '#a8b2d1', font: { size: 12 }, maxRotation: 45, minRotation: 45 },
+                                grid: { display: false, drawBorder: false }
                             }
+                        },
+                        animation: {
+                            duration: 2000,
+                            easing: 'easeOutQuart'
                         }
                     }
                 });
             }
 
-            // Render all three charts
-            createComparativeChart('precisionComparisonBarChart', 'Precision (%)', precisionScores, palette);
-            createComparativeChart('recallComparisonBarChart', 'Recall (%)', recallScores, palette);
-            createComparativeChart('f1ComparisonBarChart', 'F1 Score (%)', f1Scores, palette);
+            createComparativeChart('precisionComparisonBarChart', 'Precision (%)', precisionScores, '#ff4b4b', '#ff007f');
+            createComparativeChart('recallComparisonBarChart', 'Recall (%)', recallScores, '#00c6ff', '#0072ff');
+            createComparativeChart('f1ComparisonBarChart', 'F1 Score (%)', f1Scores, '#11998e', '#38ef7d');
+            createComparativeChart('accuracyComparisonBarChart', 'Accuracy (%)', accuracyScores, '#f12711', '#f5af19');
             
         })
         .catch(err => {
@@ -959,6 +1020,7 @@ function runRbaMetricsComparison() {
                     <th>Precision</th>
                     <th>Recall</th>
                     <th>F1 Score</th>
+                    <th>Accuracy</th>
                     <th>False Positives</th>
                     <th>False Negatives</th>
                 </tr>`;
@@ -981,6 +1043,7 @@ function runRbaMetricsComparison() {
                         <td>${(m.precision*100).toFixed(1)}%</td>
                         <td>${(m.recall*100).toFixed(1)}%</td>
                         <td>${(m.f1*100).toFixed(1)}%</td>
+                        <td>${m.accuracy !== undefined ? (m.accuracy*100).toFixed(1) + '%' : '-'}</td>
                         <td>${m.false_positives}</td>
                         <td>${m.false_negatives}</td>
                     </tr>`;
@@ -997,6 +1060,7 @@ function runRbaMetricsComparison() {
                             <td>${(m.precision*100).toFixed(1)}%</td>
                             <td>${(m.recall*100).toFixed(1)}%</td>
                             <td>${(m.f1*100).toFixed(1)}%</td>
+                            <td>${m.accuracy !== undefined ? (m.accuracy*100).toFixed(1) + '%' : '-'}</td>
                             <td>${m.false_positives}</td>
                             <td>${m.false_negatives}</td>
                         </tr>`;
@@ -1010,4 +1074,8 @@ function runRbaMetricsComparison() {
             document.getElementById('rbaMetricsTable').innerHTML = '<span style="color:#f55">Error loading metrics</span>';
         })
         .finally(hideLoading);
+}
+function logout() {
+    localStorage.clear();
+    window.location.href = "index.html";
 }

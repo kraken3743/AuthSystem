@@ -22,7 +22,19 @@ public class AnalyticsController {
                 }
                 String json = java.nio.file.Files.readString(path);
                 com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                List<Map<String, Object>> all = mapper.readValue(json, List.class);
+                
+                List<Map<String, Object>> all;
+                try {
+                    // Try to parse as Map (for {"results": [...]})
+                    Map<String, Object> parsedMap = mapper.readValue(json, Map.class);
+                    all = (List<Map<String, Object>>) parsedMap.get("results");
+                } catch (Exception e) {
+                    // Fallback to parsing as List (if it's a raw array)
+                    all = mapper.readValue(json, List.class);
+                }
+                
+                if (all == null) all = List.of();
+                
                 int total = all.size();
                 int from = Math.max(0, (page - 1) * pageSize);
                 int to = Math.min(total, from + pageSize);
@@ -34,7 +46,7 @@ public class AnalyticsController {
         public List<Map<String, Object>> rbaMlLogisticDp(@RequestParam(defaultValue = "laplace") String method,
                                                          @RequestParam(defaultValue = "1.0") double epsilon,
                                                          @RequestParam(defaultValue = "1e-5") double delta) {
-            double[] weights = { -2.0, 0.5, 0.2, 0.1, 0.05 };
+            double[] weights = { -5.0, 0.5, 0.2, 0.1, 0.05 };
             String sql = "SELECT username, COUNT(*) AS failed_count FROM rba_login_logs WHERE success = false GROUP BY username";
             List<Map<String, Object>> rows = jdbc.queryForList(sql);
             List<Map<String, Object>> result = new java.util.ArrayList<>();
@@ -60,9 +72,9 @@ public class AnalyticsController {
                                                             @RequestParam(defaultValue = "1.0") double epsilon,
                                                             @RequestParam(defaultValue = "1e-5") double delta) {
             java.util.List<java.util.List<Double>> trees = java.util.List.of(
-                java.util.List.of(10.0, 0.0, 1.0),
-                java.util.List.of(20.0, 0.0, 1.0),
-                java.util.List.of(15.0, 1.0, 0.0)
+                java.util.List.of(9.0, 0.0, 1.0),
+                java.util.List.of(25.0, 0.0, 1.0),
+                java.util.List.of(11.0, 1.0, 0.0)
             );
             String sql = "SELECT username, COUNT(*) AS failed_count FROM rba_login_logs WHERE success = false GROUP BY username";
             List<Map<String, Object>> rows = jdbc.queryForList(sql);
@@ -86,11 +98,11 @@ public class AnalyticsController {
     // These endpoints use pre-set (fixed) model weights/trees, simulating pre-trained models.
     // No training occurs per request; only inference is performed.
 
-    private static final double[] LOGISTIC_WEIGHTS = { -2.0, 0.5, 0.2, 0.1, 0.05 };
+    private static final double[] LOGISTIC_WEIGHTS = { -5.0, 0.5, 0.2, 0.1, 0.05 };
     private static final java.util.List<java.util.List<Double>> RF_TREES = java.util.List.of(
-        java.util.List.of(10.0, 0.0, 1.0),
-        java.util.List.of(20.0, 0.0, 1.0),
-        java.util.List.of(15.0, 1.0, 0.0)
+        java.util.List.of(9.0, 0.0, 1.0),
+        java.util.List.of(25.0, 0.0, 1.0),
+        java.util.List.of(11.0, 1.0, 0.0)
     );
 
     /**
@@ -397,12 +409,14 @@ public class AnalyticsController {
         String metaAllSql = "SELECT meta_pred, is_attack_ip FROM meta_model_results ORDER BY failed_count DESC LIMIT ?";
         List<Map<String, Object>> metaRowsAll = jdbc.queryForList(metaAllSql, limit);
         int metaTP = 0, metaFP = 0, metaFN = 0;
+        int metaTN = 0;
         for (Map<String, Object> row : metaRowsAll) {
             int metaPred = row.get("meta_pred") == null ? 0 : ((Number)row.get("meta_pred")).intValue();
             int isAttackIp = row.get("is_attack_ip") == null ? 0 : ((Number)row.get("is_attack_ip")).intValue();
             if (metaPred == 1 && isAttackIp == 1) metaTP++;
             if (metaPred == 1 && isAttackIp == 0) metaFP++;
             if (metaPred == 0 && isAttackIp == 1) metaFN++;
+            if (metaPred == 0 && isAttackIp == 0) metaTN++;
         }
         double laplaceThreshold = 3;
         int anomalyThreshold = 3;
@@ -433,12 +447,16 @@ public class AnalyticsController {
         int logregDpTP=0, logregDpFP=0, logregDpFN=0;
         int rfDpTP=0, rfDpFP=0, rfDpFN=0;
 
+        // True negatives for accuracy
+        int lapTN=0, gauTN=0, zTN=0, anomaly5TN=0, anomaly10TN=0;
+        int logregTN=0, rfTN=0, logregDpTN=0, rfDpTN=0;
+
         // Pre-trained weights/trees (same as used in endpoints)
-        double[] LOGISTIC_WEIGHTS = { -2.0, 0.5, 0.2, 0.1, 0.05 };
+        double[] LOGISTIC_WEIGHTS = { -5.0, 0.5, 0.2, 0.1, 0.05 };
         java.util.List<java.util.List<Double>> RF_TREES = java.util.List.of(
-            java.util.List.of(10.0, 0.0, 1.0),
-            java.util.List.of(20.0, 0.0, 1.0),
-            java.util.List.of(15.0, 1.0, 0.0)
+            java.util.List.of(9.0, 0.0, 1.0),
+            java.util.List.of(25.0, 0.0, 1.0),
+            java.util.List.of(11.0, 1.0, 0.0)
         );
         // DP noise for ML (Laplace, epsilon=1)
         double dpEps = 1.0;
@@ -463,22 +481,27 @@ public class AnalyticsController {
             if (laplaceAnomaly && isAttack) lapTP++;
             if (laplaceAnomaly && !isAttack) lapFP++;
             if (!laplaceAnomaly && isAttack) lapFN++;
+            if (!laplaceAnomaly && !isAttack) lapTN++;
             // Gaussian
             if (gaussianAnomaly && isAttack) gauTP++;
             if (gaussianAnomaly && !isAttack) gauFP++;
             if (!gaussianAnomaly && isAttack) gauFN++;
+            if (!gaussianAnomaly && !isAttack) gauTN++;
             // Z-Score
             if (zscoreAnomaly && isAttack) zTP++;
             if (zscoreAnomaly && !isAttack) zFP++;
             if (!zscoreAnomaly && isAttack) zFN++;
+            if (!zscoreAnomaly && !isAttack) zTN++;
             // Anomaly Detection (5)
             if (anomalyDetection5 && isAttack) anomaly5TP++;
             if (anomalyDetection5 && !isAttack) anomaly5FP++;
             if (!anomalyDetection5 && isAttack) anomaly5FN++;
+            if (!anomalyDetection5 && !isAttack) anomaly5TN++;
             // Anomaly Detection (10)
             if (anomalyDetection10 && isAttack) anomaly10TP++;
             if (anomalyDetection10 && !isAttack) anomaly10FP++;
             if (!anomalyDetection10 && isAttack) anomaly10FN++;
+            if (!anomalyDetection10 && !isAttack) anomaly10TN++;
 
             // --- ML METRICS ---
             // Logistic Regression (Raw)
@@ -488,11 +511,13 @@ public class AnalyticsController {
             if (logregPred && isAttack) logregTP++;
             if (logregPred && !isAttack) logregFP++;
             if (!logregPred && isAttack) logregFN++;
+            if (!logregPred && !isAttack) logregTN++;
             // Random Forest (Raw)
             int rfPred = com.authsys.ml.MLModels.randomForest(RF_TREES, features);
             if (rfPred == 1 && isAttack) rfTP++;
             if (rfPred == 1 && !isAttack) rfFP++;
             if (rfPred == 0 && isAttack) rfFN++;
+            if (rfPred == 0 && !isAttack) rfTN++;
             // Logistic Regression (DP)
             double noisy = com.authsys.privacy.DifferentialPrivacyUtil.addLaplaceNoise(count, dpEps);
             double[] dpFeatures = { noisy, 0, 0, 0 };
@@ -501,19 +526,26 @@ public class AnalyticsController {
             if (logregDpPred && isAttack) logregDpTP++;
             if (logregDpPred && !isAttack) logregDpFP++;
             if (!logregDpPred && isAttack) logregDpFN++;
+            if (!logregDpPred && !isAttack) logregDpTN++;
             // Random Forest (DP)
             int rfDpPred = com.authsys.ml.MLModels.randomForest(RF_TREES, dpFeatures);
             if (rfDpPred == 1 && isAttack) rfDpTP++;
             if (rfDpPred == 1 && !isAttack) rfDpFP++;
             if (rfDpPred == 0 && isAttack) rfDpFN++;
+            if (rfDpPred == 0 && !isAttack) rfDpTN++;
         }
         java.util.function.BiFunction<Integer, Integer, Double> safeDiv = (a, b) -> b == 0 ? 0.0 : (double)a / b;
+        java.util.function.Function<int[], Double> accuracyFn = arr -> {
+            int TP = arr[0], TN = arr[1], FP = arr[2], FN = arr[3];
+            int total = TP + TN + FP + FN;
+            return total == 0 ? 0.0 : (double)(TP + TN) / total;
+        };
         Map<String, Object> metrics = new java.util.LinkedHashMap<>();
-        // Existing algorithms
         metrics.put("Laplace", Map.of(
             "precision", safeDiv.apply(lapTP, lapTP+lapFP),
             "recall", safeDiv.apply(lapTP, lapTP+lapFN),
             "f1", (safeDiv.apply(lapTP, lapTP+lapFP)+safeDiv.apply(lapTP, lapTP+lapFN))==0?0:2*safeDiv.apply(lapTP, lapTP+lapFP)*safeDiv.apply(lapTP, lapTP+lapFN)/(safeDiv.apply(lapTP, lapTP+lapFP)+safeDiv.apply(lapTP, lapTP+lapFN)),
+            "accuracy", accuracyFn.apply(new int[]{lapTP, lapTN, lapFP, lapFN}),
             "false_positives", lapFP,
             "false_negatives", lapFN
         ));
@@ -521,6 +553,7 @@ public class AnalyticsController {
             "precision", safeDiv.apply(gauTP, gauTP+gauFP),
             "recall", safeDiv.apply(gauTP, gauTP+gauFN),
             "f1", (safeDiv.apply(gauTP, gauTP+gauFP)+safeDiv.apply(gauTP, gauTP+gauFN))==0?0:2*safeDiv.apply(gauTP, gauTP+gauFP)*safeDiv.apply(gauTP, gauTP+gauFN)/(safeDiv.apply(gauTP, gauTP+gauFP)+safeDiv.apply(gauTP, gauTP+gauFN)),
+            "accuracy", accuracyFn.apply(new int[]{gauTP, gauTN, gauFP, gauFN}),
             "false_positives", gauFP,
             "false_negatives", gauFN
         ));
@@ -528,6 +561,7 @@ public class AnalyticsController {
             "precision", safeDiv.apply(zTP, zTP+zFP),
             "recall", safeDiv.apply(zTP, zTP+zFN),
             "f1", (safeDiv.apply(zTP, zTP+zFP)+safeDiv.apply(zTP, zTP+zFN))==0?0:2*safeDiv.apply(zTP, zTP+zFP)*safeDiv.apply(zTP, zTP+zFN)/(safeDiv.apply(zTP, zTP+zFP)+safeDiv.apply(zTP, zTP+zFN)),
+            "accuracy", accuracyFn.apply(new int[]{zTP, zTN, zFP, zFN}),
             "false_positives", zFP,
             "false_negatives", zFN
         ));
@@ -535,6 +569,7 @@ public class AnalyticsController {
             "precision", safeDiv.apply(anomaly5TP, anomaly5TP+anomaly5FP),
             "recall", safeDiv.apply(anomaly5TP, anomaly5TP+anomaly5FN),
             "f1", (safeDiv.apply(anomaly5TP, anomaly5TP+anomaly5FP)+safeDiv.apply(anomaly5TP, anomaly5TP+anomaly5FN))==0?0:2*safeDiv.apply(anomaly5TP, anomaly5TP+anomaly5FP)*safeDiv.apply(anomaly5TP, anomaly5TP+anomaly5FN)/(safeDiv.apply(anomaly5TP, anomaly5TP+anomaly5FP)+safeDiv.apply(anomaly5TP, anomaly5TP+anomaly5FN)),
+            "accuracy", accuracyFn.apply(new int[]{anomaly5TP, anomaly5TN, anomaly5FP, anomaly5FN}),
             "false_positives", anomaly5FP,
             "false_negatives", anomaly5FN
         ));
@@ -542,6 +577,7 @@ public class AnalyticsController {
             "precision", safeDiv.apply(anomaly10TP, anomaly10TP+anomaly10FP),
             "recall", safeDiv.apply(anomaly10TP, anomaly10TP+anomaly10FN),
             "f1", (safeDiv.apply(anomaly10TP, anomaly10TP+anomaly10FP)+safeDiv.apply(anomaly10TP, anomaly10TP+anomaly10FN))==0?0:2*safeDiv.apply(anomaly10TP, anomaly10TP+anomaly10FP)*safeDiv.apply(anomaly10TP, anomaly10TP+anomaly10FN)/(safeDiv.apply(anomaly10TP, anomaly10TP+anomaly10FP)+safeDiv.apply(anomaly10TP, anomaly10TP+anomaly10FN)),
+            "accuracy", accuracyFn.apply(new int[]{anomaly10TP, anomaly10TN, anomaly10FP, anomaly10FN}),
             "false_positives", anomaly10FP,
             "false_negatives", anomaly10FN
         ));
@@ -550,6 +586,7 @@ public class AnalyticsController {
             "precision", safeDiv.apply(logregTP, logregTP+logregFP),
             "recall", safeDiv.apply(logregTP, logregTP+logregFN),
             "f1", (safeDiv.apply(logregTP, logregTP+logregFP)+safeDiv.apply(logregTP, logregTP+logregFN))==0?0:2*safeDiv.apply(logregTP, logregTP+logregFP)*safeDiv.apply(logregTP, logregTP+logregFN)/(safeDiv.apply(logregTP, logregTP+logregFP)+safeDiv.apply(logregTP, logregTP+logregFN)),
+            "accuracy", accuracyFn.apply(new int[]{logregTP, logregTN, logregFP, logregFN}),
             "false_positives", logregFP,
             "false_negatives", logregFN
         ));
@@ -557,6 +594,7 @@ public class AnalyticsController {
             "precision", safeDiv.apply(rfTP, rfTP+rfFP),
             "recall", safeDiv.apply(rfTP, rfTP+rfFN),
             "f1", (safeDiv.apply(rfTP, rfTP+rfFP)+safeDiv.apply(rfTP, rfTP+rfFN))==0?0:2*safeDiv.apply(rfTP, rfTP+rfFP)*safeDiv.apply(rfTP, rfTP+rfFN)/(safeDiv.apply(rfTP, rfTP+rfFP)+safeDiv.apply(rfTP, rfTP+rfFN)),
+            "accuracy", accuracyFn.apply(new int[]{rfTP, rfTN, rfFP, rfFN}),
             "false_positives", rfFP,
             "false_negatives", rfFN
         ));
@@ -564,6 +602,7 @@ public class AnalyticsController {
             "precision", safeDiv.apply(logregDpTP, logregDpTP+logregDpFP),
             "recall", safeDiv.apply(logregDpTP, logregDpTP+logregDpFN),
             "f1", (safeDiv.apply(logregDpTP, logregDpTP+logregDpFP)+safeDiv.apply(logregDpTP, logregDpTP+logregDpFN))==0?0:2*safeDiv.apply(logregDpTP, logregDpTP+logregDpFP)*safeDiv.apply(logregDpTP, logregDpTP+logregDpFN)/(safeDiv.apply(logregDpTP, logregDpTP+logregDpFP)+safeDiv.apply(logregDpTP, logregDpTP+logregDpFN)),
+            "accuracy", accuracyFn.apply(new int[]{logregDpTP, logregDpTN, logregDpFP, logregDpFN}),
             "false_positives", logregDpFP,
             "false_negatives", logregDpFN
         ));
@@ -571,15 +610,16 @@ public class AnalyticsController {
             "precision", safeDiv.apply(rfDpTP, rfDpTP+rfDpFP),
             "recall", safeDiv.apply(rfDpTP, rfDpTP+rfDpFN),
             "f1", (safeDiv.apply(rfDpTP, rfDpTP+rfDpFP)+safeDiv.apply(rfDpTP, rfDpTP+rfDpFN))==0?0:2*safeDiv.apply(rfDpTP, rfDpTP+rfDpFP)*safeDiv.apply(rfDpTP, rfDpTP+rfDpFN)/(safeDiv.apply(rfDpTP, rfDpTP+rfDpFP)+safeDiv.apply(rfDpTP, rfDpTP+rfDpFN)),
+            "accuracy", accuracyFn.apply(new int[]{rfDpTP, rfDpTN, rfDpFP, rfDpFN}),
             "false_positives", rfDpFP,
             "false_negatives", rfDpFN
         ));
-
         // --- Add Meta-Model (Stacking) metrics ---
         metrics.put("Meta-Model (Stacking)", Map.of(
             "precision", safeDiv.apply(metaTP, metaTP+metaFP),
             "recall", safeDiv.apply(metaTP, metaTP+metaFN),
             "f1", (safeDiv.apply(metaTP, metaTP+metaFP)+safeDiv.apply(metaTP, metaTP+metaFN))==0?0:2*safeDiv.apply(metaTP, metaTP+metaFP)*safeDiv.apply(metaTP, metaTP+metaFN)/(safeDiv.apply(metaTP, metaTP+metaFP)+safeDiv.apply(metaTP, metaTP+metaFN)),
+            "accuracy", accuracyFn.apply(new int[]{metaTP, metaTN, metaFP, metaFN}),
             "false_positives", metaFP,
             "false_negatives", metaFN
         ));

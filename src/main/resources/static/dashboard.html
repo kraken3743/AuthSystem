@@ -93,6 +93,10 @@
                 <h4 style="text-align: center; color: #34c759; margin-bottom: 10px;">F1 Score Comparison</h4>
                 <canvas id="f1ComparisonBarChart"></canvas>
             </div>
+            <div>
+                <h4 style="text-align: center; color: #ffa500; margin-bottom: 10px;">Accuracy Comparison</h4>
+                <canvas id="accuracyComparisonBarChart"></canvas>
+            </div>
         </div>
 
         <p style="color: #cbd5e1; font-size: 15px; margin-top: 35px; text-align: center; line-height: 1.6; max-width: 800px; margin-left: auto; margin-right: auto;">
@@ -100,6 +104,28 @@
             While baseline algorithms (Logistic Regression, Random Forest, Laplace) rely strictly on single-dimension density cutoffs (such as Failed Logon Counts), 
             the Meta-Model leverages computationally engineered multidimensional features like <em>Round-Trip Time</em> and <em>IP routing behaviors</em>. By pulling the confidence threshold down to 0.1 on these rich features, the Meta-Model avoids False Positives and attains near-perfect Recall, catapulting its F1 Score far ahead of the baseline pack.
         </p>
+
+        <div style="margin-top: 40px; border-top: 1px solid #2a2f3a; padding-top: 25px; text-align: center;">
+            <h4 style="color: #9aa0ad; margin-bottom: 20px; font-size: 16px;">Metrics Formulas Reference</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; font-size: 14px; color: #cbd5e1;">
+                <div style="background: rgba(255,255,255,0.05); padding: 15px 25px; border-radius: 8px;">
+                    <strong style="color: #ff3b30; display: block; margin-bottom: 8px;">Precision</strong>
+                    <span style="font-family: monospace;">TP / (TP + FP)</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 15px 25px; border-radius: 8px;">
+                    <strong style="color: #007aff; display: block; margin-bottom: 8px;">Recall</strong>
+                    <span style="font-family: monospace;">TP / (TP + FN)</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 15px 25px; border-radius: 8px;">
+                    <strong style="color: #34c759; display: block; margin-bottom: 8px;">F1 Score</strong>
+                    <span style="font-family: monospace;">2 &times; (Precision &times; Recall) / (Precision + Recall)</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 15px 25px; border-radius: 8px;">
+                    <strong style="color: #ffa500; display: block; margin-bottom: 8px;">Accuracy</strong>
+                    <span style="font-family: monospace;">(TP + TN) / Total</span>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

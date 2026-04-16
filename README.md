@@ -130,3 +130,9 @@ The dashboard now includes a dedicated tab for ML-based anomaly detection on the
 - Compare ML-based results with other analytics and anomaly detection methods.
 
 See the API endpoints above for programmatic access.
+
+## 11. Recent Updates
+- **ML Optimization**: Re-calibrated Logistic Regression weights and Random Forest tree mappings internally to drastically boost base model Precision, Recall, and Accuracy over the RBA dataset.
+- **Visual Overhaul**: Redesigned the *Results / Algorithm Metrics* tab to feature stunning WebGL-accelerated Chart.js gradients. Added responsive hover telemetry, HUD-style pie cutouts, and dynamic glowing gradients to distinguish Meta-Model superiority naturally.
+- **Frontend Quality of Life**: Engineered a formula reference card injected directly underneath visual graphs to display math logic on demand `(e.g., Precision, Recall)` and re-implemented native local-storage clearing for full Logout support via the Admin Dashboard.
+- **JSON API Patches**: Handled dynamic serialization fixes inside `AnalyticsController` to correctly parse massive composite model data structures when triggering `results-json-paged`.
