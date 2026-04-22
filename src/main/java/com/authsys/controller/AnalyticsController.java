@@ -722,6 +722,22 @@ public class AnalyticsController {
             "false_negatives", lofDpFN
         ));
 
+        // --- Load Cross-Domain Datasets Metrics (e.g., linux_auth_logs) ---
+        try {
+            java.io.File linuxFile = new java.io.File("linux_eval_metrics.json");
+            if (linuxFile.exists()) {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                Map<String, Map<String, Double>> linuxData = mapper.readValue(linuxFile, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Map<String, Double>>>(){});
+                for (Map.Entry<String, Map<String, Double>> entry : linuxData.entrySet()) {
+                    Map<String, Object> scaledMetrics = new java.util.HashMap<>();
+                    for (Map.Entry<String, Double> val : entry.getValue().entrySet()) {
+                        scaledMetrics.put(val.getKey(), val.getValue());
+                    }
+                    metrics.put(entry.getKey(), scaledMetrics);
+                }
+            }
+        } catch (Exception e) {}
+
         return Map.of("metrics", metrics);
     }
 }
