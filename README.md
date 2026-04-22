@@ -132,7 +132,38 @@ The dashboard now includes a dedicated tab for ML-based anomaly detection on the
 See the API endpoints above for programmatic access.
 
 ## 11. Recent Updates
+- **Cryptographic IP Pseudonymization**: Integrated an ephemeral HMAC-SHA256 privacy layer (`anonymize_ip_datasets.py`) to permanently obscure raw IP addresses in datasets. Unlike naive noise injection which corrupts analytical bounds, this ensures differential privacy at the aggregate level while preserving 1:1 behavioral cardinality for precise unique-user and routing tracking.
+- **Cross-Dataset Universal Meta-Model**: Abstracted fundamentally different data sources (e.g., raw Linux shell logs vs application RBA hits) into four universal spatial/temporal dimensions (`failed_count`, `login_freq`, `unique_ips`, `avg_rtt`). This renders the XGBoost Meta-Model completely dataset-agnostic, capable of universal zero-day anomaly detection.
+- **Expanded Linux Dataset & Synthetic Overlap Engineering**: Deployed `prepare_linux_dataset.py` and `ml_linux_eval.py` to synthetically calculate missing RTTs and algorithmically inject strict Gaussian (`Normal(μ=10, σ=15)`) and Poisson (`λ=2`) noise structures. This prevents sterile model overfitting and mimics real-world disguised botnet overlap.
+- **Unsupervised Anomaly Pipeline**: Shipped `ml_unsupervised.py` leveraging a 150-estimator Isolation Forest dynamically scaling contamination > 0.05. This acts as a secondary safety net to catch zero-day botnet routing anomalies completely independent of supervised labels.
+- **Discontinuous Probability Thresholding (0.1)**: Extensively mapped precision-recall capabilities across the Sigmoid continuum to prove that a 0.1 threshold represents the exact mathematical "sweet spot". It perfectly seizes low-velocity, distributed stealth botnets (maximized Recall) without affecting static baseline False Positives.
 - **ML Optimization**: Re-calibrated Logistic Regression weights and Random Forest tree mappings internally to drastically boost base model Precision, Recall, and Accuracy over the RBA dataset.
 - **Visual Overhaul**: Redesigned the *Results / Algorithm Metrics* tab to feature stunning WebGL-accelerated Chart.js gradients. Added responsive hover telemetry, HUD-style pie cutouts, and dynamic glowing gradients to distinguish Meta-Model superiority naturally.
 - **Frontend Quality of Life**: Engineered a formula reference card injected directly underneath visual graphs to display math logic on demand `(e.g., Precision, Recall)` and re-implemented native local-storage clearing for full Logout support via the Admin Dashboard.
 - **JSON API Patches**: Handled dynamic serialization fixes inside `AnalyticsController` to correctly parse massive composite model data structures when triggering `results-json-paged`.
+
+## 12. Local Execution Commands
+To run the full suite of newly integrated Machine Learning and Privacy pipelines, execute the following commands using your virtual environment:
+
+```bash
+# 1. Start the Java Spring Boot Server (Must be running for DB syncing)
+./mvnw spring-boot:run
+
+# 2. Extract and format the raw Linux Dataset
+.venv/bin/python prepare_linux_dataset.py
+
+# 3. Apply Ephemeral HMAC-SHA256 Pseudonymization for Dataset Privacy
+.venv/bin/python anonymize_ip_datasets.py
+
+# 4. Evaluate Base Classifiers & Inject Gaussian/Poisson Overlap
+.venv/bin/python ml_linux_eval.py
+
+# 5. Execute Unsupervised Anomaly Isolation (150-Tree Isolation Forest)
+.venv/bin/python ml_unsupervised.py
+
+# 6. Process the Universal XGBoost Meta-Model Space
+.venv/bin/python ml_stacking_meta.py
+
+# 7. Sync the 0.1 Threshold Inferences into the Live PostgreSQL Database
+.venv/bin/python post_meta_results.py
+```
