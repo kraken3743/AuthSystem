@@ -54,3 +54,16 @@ test_*.py
 find_target.py
 fix_charts.py
 get_counts.py
+
+# Build / System / Runtime Exclusions
+*.pyc
+__pycache__/
+.DS_Store
+.idea/
+.vscode/
+target/
+build/
+dist/
+*.log
+.env
+datasets/
