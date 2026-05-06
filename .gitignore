@@ -67,3 +67,5 @@ dist/
 *.log
 .env
 datasets/
+*.zip
+*.json
