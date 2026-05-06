@@ -1,6 +1,8 @@
-# Privacy-Preserving Authentication & Login Anomaly Detection System
+# 🛡️ Privacy-Preserving Authentication & Login Anomaly Detection System
 
-## 1. Overview
+## 📖 1. Overview
+
+![Architecture Flowchart](architecture_flowchart.png)
 
 This project is a comprehensive authentication and analytics system built with Java Spring Boot and a JavaScript frontend. It provides standard user authentication (registration and login) with role-based access control (ADMIN/USER).
 
@@ -8,7 +10,7 @@ The system's core feature is its security analytics dashboard, which provides in
 
 The system is designed to detect anomalies based on login failures, both across all time and within specific time windows. It natively ingests the internal application `login_logs` alongside multi-variate external payloads, including CERT insider threat logs, RBA metrics, and raw Linux Shell Authentication matrices. To combat novel threats, it executes both Supervised (XGBoost Stacking) and Unsupervised (Isolation Forest) Machine Learning pipelines abstracted to operate universally across all datasets.
 
-## 2. Core Features
+## ✨ 2. Core Features
 
 * **User Authentication**: Secure user registration and login.
 * **Role-Based Access Control (RBAC)**: Distinct `ADMIN` and `USER` roles. The first user to register automatically becomes an `ADMIN`.
@@ -24,7 +26,7 @@ The system is designed to detect anomalies based on login failures, both across 
     * **Supervised Stacking (Meta-Model)**: Uses an advanced Python XGBoost Meta-Model tuned to a strict 0.1 threshold to perfectly identify distributed stealth botnets, utilizing probability output manifolds rather than static arrays.
     * **Unsupervised Isolation Detection**: Incorporates an Isolation Forest (150 estimators, >0.05 contamination) acting as an autonomous zero-day anomaly boundary completely independent of training labels.
 
-## 3. Technology Stack
+## 🛠️ 3. Technology Stack
 
 | Component      | Technology                                       |
 |----------------|--------------------------------------------------|
@@ -36,7 +38,7 @@ The system is designed to detect anomalies based on login failures, both across 
 | **Machine Learning**| Python, Pandas, Scikit-Learn, XGBoost, Isolation Forest, Local Outlier Factor|
 | **Differential Privacy Architecture** | HMAC-SHA256 Ephemeral Tokenization (`os.urandom`), Laplace/Gaussian Distributions |
 
-## 4. System Architecture
+## 🏗️ 4. System Architecture
 
 The application follows a classic client-server architecture.
 
@@ -67,7 +69,7 @@ The architectural spine is heavily augmented by localized Python scripts driving
 *   **`ml_stacking_meta.py`**: The definitive XGBoost-powered Stacking Meta-Classifier correlating disparate univariate models logic to perfectly isolate disguised botnets across a unique 0.1 Sigmoid threshold.
 *   **`post_meta_results.py`**: Functions as the deployment tunnel pushing the threshold-mapped JSON parameters securely into the Spring Boot Datastore APIs.
 
-## 5. System Pipeline
+## ⚙️ 5. System Pipeline
 
 1. **User Interaction**
    - Users register and log in through the web UI.
@@ -121,7 +123,7 @@ The architectural spine is heavily augmented by localized Python scripts driving
    - `/auth/analytics/rba/ml/randomforest-dp?method=laplace|gaussian&epsilon=...&delta=...`: Returns per-user attack prediction using a random forest ensemble on differentially private data (pre-trained/fixed trees).
    - `/auth/analytics/rba/metrics-comparison`: Delivers a comprehensive quantitative breakdown evaluating Precision/Recall/F1 dynamically across all registered ML mechanisms.
 
-   ## 10. ML Anomaly (RBA) Tab
+   ## 📊 10. ML Anomaly (RBA) Tab
 
 The dashboard now includes a dedicated tab for ML-based anomaly detection on the RBA dataset. This tab allows you to:
 
@@ -132,21 +134,27 @@ The dashboard now includes a dedicated tab for ML-based anomaly detection on the
 
 See the API endpoints above for programmatic access.
 
-## 11. Recent Updates
-- **Cryptographic IP Pseudonymization**: Integrated an ephemeral HMAC-SHA256 privacy layer (`anonymize_ip_datasets.py`) to permanently obscure raw IP addresses in datasets. Unlike naive noise injection which corrupts analytical bounds, this ensures differential privacy at the aggregate level while preserving 1:1 behavioral cardinality for precise unique-user and routing tracking.
-- **Cross-Dataset Universal Meta-Model**: Abstracted fundamentally different data sources (e.g., raw Linux shell logs vs application RBA hits) into four universal spatial/temporal dimensions (`failed_count`, `login_freq`, `unique_ips`, `avg_rtt`). This renders the XGBoost Meta-Model completely dataset-agnostic, capable of universal zero-day anomaly detection.
+## 🔒 11. Cryptographic IP Pseudonymization
+- **HMAC-SHA256 Ephemeral Tokenization**: Integrated an ephemeral HMAC-SHA256 privacy layer (`anonymize_ip_datasets.py`) to permanently obscure raw IP addresses in datasets. Unlike naive noise injection which corrupts analytical bounds, this ensures differential privacy at the aggregate level while preserving 1:1 behavioral cardinality for precise unique-user and routing tracking.
+
+## 🧠 12. Unsupervised Machine Learning Pipeline
+- **Isolation Forest & Local Outlier Factor**: Shipped `ml_unsupervised.py` leveraging a 150-estimator Isolation Forest dynamically locked to a contamination parameter of `0.05`. This acts as a secondary safety net to catch zero-day botnet routing anomalies completely independent of supervised labels.
+
+## 💾 13. Cross-Dataset Universal Meta-Model (Linux & RBA)
+- **Universal Abstract Dimensions**: Abstracted fundamentally different data sources (e.g., raw Linux shell logs vs application RBA hits) into four universal spatial/temporal dimensions (`failed_count`, `login_freq`, `unique_ips`, `avg_rtt`). This renders the XGBoost Meta-Model completely dataset-agnostic, capable of universal zero-day anomaly detection.
 - **Expanded Linux Dataset & Synthetic Overlap Engineering**: Deployed `prepare_linux_dataset.py` and `ml_linux_eval.py` to synthetically calculate missing RTTs and algorithmically inject strict Gaussian (`Normal(μ=10, σ=15)`) and Poisson (`λ=2`) noise structures. This prevents sterile model overfitting and mimics real-world disguised botnet overlap.
-- **Unsupervised Anomaly Pipeline**: Shipped `ml_unsupervised.py` leveraging a 150-estimator Isolation Forest dynamically scaling contamination > 0.05. This acts as a secondary safety net to catch zero-day botnet routing anomalies completely independent of supervised labels.
 - **Discontinuous Probability Thresholding (0.1)**: Extensively mapped precision-recall capabilities across the Sigmoid continuum to prove that a 0.1 threshold represents the exact mathematical "sweet spot". It perfectly seizes low-velocity, distributed stealth botnets (maximized Recall) without affecting static baseline False Positives.
 - **ML Optimization**: Re-calibrated Logistic Regression weights and Random Forest tree mappings internally to drastically boost base model Precision, Recall, and Accuracy over the RBA dataset.
+
+## 📈 14. Dual-Dataset Interactive Analytics Dashboard
 - **Visual Overhaul**: Redesigned the *Results / Algorithm Metrics* tab to feature stunning WebGL-accelerated Chart.js gradients. Added responsive hover telemetry, HUD-style pie cutouts, and dynamic glowing gradients to distinguish Meta-Model superiority naturally.
-- **Dual-Dataset Interactive Analytics Dashboard**: Completely re-architected the `dashboard.html` interface to include a dedicated *Comparison* tab. It renders dual-pipeline performance progression sequences side-by-side for both RBA and Linux datasets.
+- **Interactive Analytics Tab**: Completely re-architected the `dashboard.html` interface to include a dedicated *Comparison* tab. It renders dual-pipeline performance progression sequences side-by-side for both RBA and Linux datasets.
 - **Granular Algorithm Profiling**: Each algorithm (Logistic Regression, Random Forest, Meta-Model, Isolation Forest, Local Outlier Factor) now actively tracks and scales structural metrics (Precision, Recall, F1 Score, Accuracy, TP, TN, FP, FN). 
-- **Dashboard UI Fixes**: Eliminated Web Server encoding issues (Mojibake corruptions like `âœ”`) by migrating to structured HTML entities. Also corrected the Unsupervised algorithm visual matrices by hardcoding the dynamic `contamination` parameter to `0.05` to present mathematically true representations of performance.
+- **Dashboard UI Fixes**: Eliminated Web Server encoding issues by migrating to structured HTML entities. Corrected the Unsupervised algorithm visual matrices by hardcoding the dynamic `contamination` parameter to present mathematically true representations of performance.
 - **Frontend Quality of Life**: Engineered a formula reference card injected directly underneath visual graphs to display math logic on demand `(e.g., Precision, Recall)` and re-implemented native local-storage clearing for full Logout support via the Admin Dashboard.
 - **JSON API Patches**: Handled dynamic serialization fixes inside `AnalyticsController` to correctly parse massive composite model data structures when triggering `results-json-paged`.
 
-## 12. Local Execution Commands
+## 🚀 15. Local Execution Commands
 To run the full suite of newly integrated Machine Learning and Privacy pipelines, execute the following commands using your virtual environment:
 
 ```bash
