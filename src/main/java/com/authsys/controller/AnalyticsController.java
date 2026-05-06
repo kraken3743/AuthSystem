@@ -556,6 +556,56 @@ public class AnalyticsController {
         };
         Map<String, Object> metrics = new java.util.LinkedHashMap<>();
         
+        metrics.put("Laplace DP", Map.of(
+            "precision", safeDiv.apply(lapTP, lapTP+lapFP),
+            "recall", safeDiv.apply(lapTP, lapTP+lapFN),
+            "f1", (safeDiv.apply(lapTP, lapTP+lapFP)+safeDiv.apply(lapTP, lapTP+lapFN))==0?0:2*safeDiv.apply(lapTP, lapTP+lapFP)*safeDiv.apply(lapTP, lapTP+lapFN)/(safeDiv.apply(lapTP, lapTP+lapFP)+safeDiv.apply(lapTP, lapTP+lapFN)),
+            "accuracy", accuracyFn.apply(new int[]{lapTP, lapTN, lapFP, lapFN}),
+            "false_positives", lapFP,
+            "false_negatives", lapFN,
+            "true_positives", lapTP,
+            "true_negatives", lapTN
+        ));
+        metrics.put("Gaussian DP", Map.of(
+            "precision", safeDiv.apply(gauTP, gauTP+gauFP),
+            "recall", safeDiv.apply(gauTP, gauTP+gauFN),
+            "f1", (safeDiv.apply(gauTP, gauTP+gauFP)+safeDiv.apply(gauTP, gauTP+gauFN))==0?0:2*safeDiv.apply(gauTP, gauTP+gauFP)*safeDiv.apply(gauTP, gauTP+gauFN)/(safeDiv.apply(gauTP, gauTP+gauFP)+safeDiv.apply(gauTP, gauTP+gauFN)),
+            "accuracy", accuracyFn.apply(new int[]{gauTP, gauTN, gauFP, gauFN}),
+            "false_positives", gauFP,
+            "false_negatives", gauFN,
+            "true_positives", gauTP,
+            "true_negatives", gauTN
+        ));
+        metrics.put("Z-Score", Map.of(
+            "precision", safeDiv.apply(zTP, zTP+zFP),
+            "recall", safeDiv.apply(zTP, zTP+zFN),
+            "f1", (safeDiv.apply(zTP, zTP+zFP)+safeDiv.apply(zTP, zTP+zFN))==0?0:2*safeDiv.apply(zTP, zTP+zFP)*safeDiv.apply(zTP, zTP+zFN)/(safeDiv.apply(zTP, zTP+zFP)+safeDiv.apply(zTP, zTP+zFN)),
+            "accuracy", accuracyFn.apply(new int[]{zTP, zTN, zFP, zFN}),
+            "false_positives", zFP,
+            "false_negatives", zFN,
+            "true_positives", zTP,
+            "true_negatives", zTN
+        ));
+        metrics.put("Anomaly Detection (T=5)", Map.of(
+            "precision", safeDiv.apply(anomaly5TP, anomaly5TP+anomaly5FP),
+            "recall", safeDiv.apply(anomaly5TP, anomaly5TP+anomaly5FN),
+            "f1", (safeDiv.apply(anomaly5TP, anomaly5TP+anomaly5FP)+safeDiv.apply(anomaly5TP, anomaly5TP+anomaly5FN))==0?0:2*safeDiv.apply(anomaly5TP, anomaly5TP+anomaly5FP)*safeDiv.apply(anomaly5TP, anomaly5TP+anomaly5FN)/(safeDiv.apply(anomaly5TP, anomaly5TP+anomaly5FP)+safeDiv.apply(anomaly5TP, anomaly5TP+anomaly5FN)),
+            "accuracy", accuracyFn.apply(new int[]{anomaly5TP, anomaly5TN, anomaly5FP, anomaly5FN}),
+            "false_positives", anomaly5FP,
+            "false_negatives", anomaly5FN,
+            "true_positives", anomaly5TP,
+            "true_negatives", anomaly5TN
+        ));
+        metrics.put("Anomaly Detection (T=10)", Map.of(
+            "precision", safeDiv.apply(anomaly10TP, anomaly10TP+anomaly10FP),
+            "recall", safeDiv.apply(anomaly10TP, anomaly10TP+anomaly10FN),
+            "f1", (safeDiv.apply(anomaly10TP, anomaly10TP+anomaly10FP)+safeDiv.apply(anomaly10TP, anomaly10TP+anomaly10FN))==0?0:2*safeDiv.apply(anomaly10TP, anomaly10TP+anomaly10FP)*safeDiv.apply(anomaly10TP, anomaly10TP+anomaly10FN)/(safeDiv.apply(anomaly10TP, anomaly10TP+anomaly10FP)+safeDiv.apply(anomaly10TP, anomaly10TP+anomaly10FN)),
+            "accuracy", accuracyFn.apply(new int[]{anomaly10TP, anomaly10TN, anomaly10FP, anomaly10FN}),
+            "false_positives", anomaly10FP,
+            "false_negatives", anomaly10FN,
+            "true_positives", anomaly10TP,
+            "true_negatives", anomaly10TN
+        ));
         metrics.put("Logistic Regression (Raw)", Map.of(
             "precision", 0.612, "recall", 0.351, "f1", 0.446, "accuracy", 0.892, "false_positives", 21, "false_negatives", 65, "true_positives", 35, "true_negatives", 679
         ));

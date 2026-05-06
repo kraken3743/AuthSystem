@@ -45,8 +45,8 @@ function loadMlRbaPaged(page = 1) {
 }
 
 // Hook up ML Anomaly (RBA) tab to load first page on tab click
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelector('button[onclick="showTab(\'ml-rba\')"]').addEventListener('click', function() {
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelector('button[onclick="showTab(\'ml-rba\')"]').addEventListener('click', function () {
         loadMlRbaPaged(1);
     });
     // Data Source selector removed; no event handler needed
@@ -67,10 +67,10 @@ function loadResultsTab() {
                 fp: rawMetrics[algo].false_positives,
                 fn: rawMetrics[algo].false_negatives
             }));
-            
+
             const container = document.getElementById('metricsPieChartsContainer');
             container.innerHTML = '';
-            
+
             // Beautiful modern gradients
             const metricLabels = [
                 { key: 'precision', label: 'Precision', desc: 'Proportion of correct precision predictions.', colorStart: '#ff4b4b', colorEnd: '#ff007f' },
@@ -78,25 +78,25 @@ function loadResultsTab() {
                 { key: 'f1', label: 'F1 Score', desc: 'Harmonic mean of precision and recall.', colorStart: '#11998e', colorEnd: '#38ef7d' },
                 { key: 'accuracy', label: 'Accuracy', desc: 'Proportion of correct predictions.', colorStart: '#f12711', colorEnd: '#f5af19' }
             ];
-            
+
             metrics.forEach((alg, idx) => {
                 const block = document.createElement('div');
                 block.className = 'metrics-algorithm-block';
                 block.innerHTML = `<div class="metrics-algorithm-title">${alg.algorithm}</div>`;
-                
+
                 const row = document.createElement('div');
                 row.className = 'metrics-piechart-row';
-                
+
                 metricLabels.forEach(metric => {
                     const value = Math.round((alg[metric.key] || 0) * 1000) / 10;
                     const other = 100 - value;
                     const chartId = `pie_${idx}_${metric.key}`;
-                    
+
                     const card = document.createElement('div');
                     card.className = 'metrics-piechart-card';
                     card.style.position = 'relative';
                     card.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease';
-                    
+
                     // Add hover effect
                     card.onmouseover = () => { card.style.transform = 'translateY(-10px)'; };
                     card.onmouseout = () => { card.style.transform = 'translateY(0px)'; };
@@ -117,13 +117,13 @@ function loadResultsTab() {
                         </div>
                     `;
                     row.appendChild(card);
-                    
+
                     setTimeout(() => {
                         const ctx = document.getElementById(chartId).getContext('2d');
                         const gradient = ctx.createLinearGradient(0, 0, 0, 140);
                         gradient.addColorStop(0, metric.colorStart);
                         gradient.addColorStop(1, metric.colorEnd);
-                        
+
                         new Chart(ctx, {
                             type: 'doughnut',
                             data: {
@@ -164,55 +164,84 @@ function loadResultsTab() {
                 block.appendChild(row);
                 container.appendChild(block);
             });
-            
-            // Comparative Bar Charts
-            const algoNames = metrics.map(m => m.algorithm);
-            const precisionScores = metrics.map(m => Math.round((m.precision || 0) * 1000) / 10);
-            const recallScores = metrics.map(m => Math.round((m.recall || 0) * 1000) / 10);
-            const f1Scores = metrics.map(m => Math.round((m.f1 || 0) * 1000) / 10);
-            const accuracyScores = metrics.map(m => Math.round((m.accuracy || 0) * 1000) / 10);
-            
-            function createComparativeChart(canvasId, label, dataArray, gradientStart, gradientEnd) {
+
+            // Comparative Bar Charts grouped by RBA vs Linux
+            const modelPairs = [
+                { display: "Logistic Regression", rba: "Logistic Regression (Raw)", linux: "Linux Logistic Regression" },
+                { display: "Random Forest", rba: "Random Forest (Raw)", linux: "Linux Random Forest" },
+                { display: "Logistic Regression (DP)", rba: "Logistic Regression (DP)", linux: "Linux Logistic Regression (DP)" },
+                { display: "Random Forest (DP)", rba: "Random Forest (DP)", linux: "Linux Random Forest (DP)" },
+                { display: "Meta-Model", rba: "Meta-Model (Stacking)", linux: "Linux Meta-Model" },
+                { display: "Meta-Model (DP)", rba: "Meta-Model (DP)", linux: "Linux Meta-Model (DP)" },
+                { display: "Isolation Forest", rba: "Isolation Forest", linux: "Linux Isolation Forest" },
+                { display: "Isolation Forest (DP)", rba: "Isolation Forest (DP)", linux: "Linux Isolation Forest (DP)" },
+                { display: "Local Outlier Factor", rba: "Local Outlier Factor", linux: "Linux Local Outlier Factor" },
+                { display: "Local Outlier Factor (DP)", rba: "Local Outlier Factor (DP)", linux: "Linux Local Outlier Factor (DP)" },
+
+            ];
+
+            const algoNames = modelPairs.map(p => p.display);
+
+            function getScore(metricKey, modelName) {
+                if (!modelName) return 0;
+                const m = metrics.find(x => x.algorithm === modelName);
+                if (!m) return 0;
+                return Math.round((m[metricKey] || 0) * 1000) / 10;
+            }
+
+            const getRbaScores = (key) => modelPairs.map(p => getScore(key, p.rba));
+            const getLinuxScores = (key) => modelPairs.map(p => getScore(key, p.linux));
+
+            function createGroupedComparativeChart(canvasId, key, rbaGradientStart, rbaGradientEnd, linuxGradientStart, linuxGradientEnd) {
                 const canvas = document.getElementById(canvasId);
                 const ctx = canvas.getContext('2d');
                 if (window[canvasId + 'Instance']) window[canvasId + 'Instance'].destroy();
-                
-                // Set fixed height to ensure massive bars look good
+
                 canvas.parentNode.style.height = '350px';
-                
-                // Create gradient for normal bars
-                const mainGradient = ctx.createLinearGradient(0, 0, 0, 350);
-                mainGradient.addColorStop(0, gradientStart);
-                mainGradient.addColorStop(1, gradientEnd);
-                
-                // Glow effect gradient for Meta-Model
-                const metaGradient = ctx.createLinearGradient(0, 0, 0, 350);
-                metaGradient.addColorStop(0, '#ffd700');
-                metaGradient.addColorStop(1, '#ffaa00');
-                
-                const bgColors = algoNames.map(name => name.includes("Meta-Model") ? metaGradient : mainGradient);
-                
+
+                const rbaGradient = ctx.createLinearGradient(0, 0, 0, 350);
+                rbaGradient.addColorStop(0, rbaGradientStart);
+                rbaGradient.addColorStop(1, rbaGradientEnd);
+
+                const linuxGradient = ctx.createLinearGradient(0, 0, 0, 350);
+                linuxGradient.addColorStop(0, linuxGradientStart);
+                linuxGradient.addColorStop(1, linuxGradientEnd);
+
                 window[canvasId + 'Instance'] = new Chart(ctx, {
                     type: 'bar',
                     data: {
                         labels: algoNames,
-                        datasets: [{
-                            label: label,
-                            data: dataArray,
-                            backgroundColor: bgColors,
-                            borderWidth: 0,
-                            borderRadius: 6,
-                            barPercentage: 0.6,
-                            hoverBackgroundColor: '#ffffff'
-                        }]
+                        datasets: [
+                            {
+                                label: 'RBA Dataset',
+                                data: getRbaScores(key),
+                                backgroundColor: rbaGradient,
+                                borderWidth: 0,
+                                borderRadius: 4,
+                                barPercentage: 0.85,
+                                categoryPercentage: 0.75
+                            },
+                            {
+                                label: 'Linux Dataset',
+                                data: getLinuxScores(key),
+                                backgroundColor: linuxGradient,
+                                borderWidth: 0,
+                                borderRadius: 4,
+                                barPercentage: 0.85,
+                                categoryPercentage: 0.75
+                            }
+                        ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { display: false },
-                            tooltip: { 
-                                callbacks: { label: context => context.raw + '%' },
+                            legend: {
+                                display: true,
+                                labels: { color: '#cbd5e1', font: { size: 14 } }
+                            },
+                            tooltip: {
+                                callbacks: { label: context => context.dataset.label + ': ' + context.raw + '%' },
                                 backgroundColor: 'rgba(20, 25, 35, 0.9)',
                                 padding: 12,
                                 cornerRadius: 8
@@ -230,19 +259,16 @@ function loadResultsTab() {
                                 grid: { display: false, drawBorder: false }
                             }
                         },
-                        animation: {
-                            duration: 2000,
-                            easing: 'easeOutQuart'
-                        }
+                        animation: { duration: 2000, easing: 'easeOutQuart' }
                     }
                 });
             }
 
-            createComparativeChart('precisionComparisonBarChart', 'Precision (%)', precisionScores, '#ff4b4b', '#ff007f');
-            createComparativeChart('recallComparisonBarChart', 'Recall (%)', recallScores, '#00c6ff', '#0072ff');
-            createComparativeChart('f1ComparisonBarChart', 'F1 Score (%)', f1Scores, '#11998e', '#38ef7d');
-            createComparativeChart('accuracyComparisonBarChart', 'Accuracy (%)', accuracyScores, '#f12711', '#f5af19');
-            
+            createGroupedComparativeChart('precisionComparisonBarChart', 'precision', '#ff4b4b', '#ff007f', '#38ef7d', '#11998e');
+            createGroupedComparativeChart('recallComparisonBarChart', 'recall', '#00c6ff', '#0072ff', '#f5af19', '#f12711');
+            createGroupedComparativeChart('f1ComparisonBarChart', 'f1', '#11998e', '#38ef7d', '#c33764', '#1d2671');
+            createGroupedComparativeChart('accuracyComparisonBarChart', 'accuracy', '#f12711', '#f5af19', '#8E2DE2', '#4A00E0');
+
         })
         .catch(err => {
             console.error(err);
@@ -252,7 +278,7 @@ function loadResultsTab() {
 }
 
 // Hook up tab load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('button[onclick="showTab(\'results\')"]').addEventListener('click', loadResultsTab);
 });
 function getMlDpParams() {
@@ -387,7 +413,7 @@ function getDelta() {
 
 // Show/hide delta selector based on privacy method
 const privacyMethodSelect = document.getElementById("privacyMethod");
-privacyMethodSelect.addEventListener("change", function() {
+privacyMethodSelect.addEventListener("change", function () {
     const show = privacyMethodSelect.value === "gaussian";
     document.getElementById("deltaLabel").style.display = show ? "inline-block" : "none";
     document.getElementById("delta").style.display = show ? "inline-block" : "none";
@@ -417,8 +443,8 @@ function addGaussianNoise(v, eps, delta) {
 // Box-Muller transform for normal distribution
 function randomNormal() {
     let u = 0, v = 0;
-    while(u === 0) u = Math.random();
-    while(v === 0) v = Math.random();
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
     return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
 }
 
@@ -440,7 +466,7 @@ function renderRbaPaginationGeneric(tab, loadFn, totalKey = 'user-count') {
             let end = Math.min(totalPages, start + 9);
             if (end - start < 9) start = Math.max(1, end - 9);
             if (currentPage > 1) {
-                html += `<a href="#" onclick="${loadFn}(${currentPage-1})">Prev</a> `;
+                html += `<a href="#" onclick="${loadFn}(${currentPage - 1})">Prev</a> `;
             }
             for (let i = start; i <= end; ++i) {
                 if (i === currentPage) {
@@ -450,7 +476,7 @@ function renderRbaPaginationGeneric(tab, loadFn, totalKey = 'user-count') {
                 }
             }
             if (currentPage < totalPages) {
-                html += `<a href="#" onclick="${loadFn}(${currentPage+1})">Next</a>`;
+                html += `<a href="#" onclick="${loadFn}(${currentPage + 1})">Next</a>`;
             }
             let pagDiv = document.getElementById(tab + 'RbaPagination');
             if (!pagDiv) {
@@ -471,7 +497,7 @@ function loadRbaFailedLoginsPage(page = 1) {
     const method = getPrivacyMethod();
     const delta = parseFloat(getDelta());
     showLoading();
-    fetch(`/auth/analytics/rba/failed-logins?limit=${rbaPageSize}&offset=${(page-1)*rbaPageSize}`)
+    fetch(`/auth/analytics/rba/failed-logins?limit=${rbaPageSize}&offset=${(page - 1) * rbaPageSize}`)
         .then(r => r.json())
         .then(data => {
             if (page === 1) {
@@ -509,7 +535,7 @@ function loadRbaAnomaliesPage(page = 1) {
     showLoading();
     // Enforce minimum threshold of 10
     th = Math.max(10, th);
-    fetch(`/auth/analytics/rba/anomalies?threshold=${th}&limit=${rbaPageSize}&offset=${(page-1)*rbaPageSize}`)
+    fetch(`/auth/analytics/rba/anomalies?threshold=${th}&limit=${rbaPageSize}&offset=${(page - 1) * rbaPageSize}`)
         .then(r => r.json())
         .then(data => {
             anomalyTable.innerHTML = "<tr><th>User</th><th>Noisy Count</th><th>Anomaly</th></tr>";
@@ -575,7 +601,7 @@ function loadRbaZScorePage(page = 1) {
     rbaCurrentPage = page;
     const th = parseFloat(document.getElementById("zscoreThreshold").value);
     showLoading();
-    fetch(`/auth/analytics/rba/zscore-anomalies?threshold=${th}&limit=${rbaPageSize}&offset=${(page-1)*rbaPageSize}`)
+    fetch(`/auth/analytics/rba/zscore-anomalies?threshold=${th}&limit=${rbaPageSize}&offset=${(page - 1) * rbaPageSize}`)
         .then(r => r.json())
         .then(data => {
             zscoreTable.innerHTML = "<tr><th>User</th><th>Count</th><th>Z-Score Anomaly</th></tr>";
@@ -829,7 +855,7 @@ function activateUser(username) {
 }
 
 /* ================= MASTER LOAD ================= */
-window.addEventListener('DOMContentLoaded', function() {
+window.addEventListener('DOMContentLoaded', function () {
     // If RBA tab is present, set up loading bar and chart
     if (document.getElementById('rba-accuracy')) {
         document.getElementById('rba-accuracy').style.display = 'none';
@@ -1028,6 +1054,7 @@ function runRbaMetricsComparison() {
                 </tr>`;
             // Render all metrics rows, preserving order for known algorithms, then any others (like meta-model)
             const knownOrder = [
+                "Laplace DP", "Gaussian DP", "Z-Score", "Anomaly Detection (T=5)", "Anomaly Detection (T=10)",
                 "Logistic Regression (Raw)", "Random Forest (Raw)", "Logistic Regression (DP)", "Random Forest (DP)",
                 "Meta-Model (Stacking)", "Meta-Model (DP)", "Isolation Forest", "Isolation Forest (DP)",
                 "Local Outlier Factor", "Local Outlier Factor (DP)", "Linux Logistic Regression", "Linux Logistic Regression (DP)",
@@ -1041,10 +1068,10 @@ function runRbaMetricsComparison() {
                     let label = key;
                     html += `<tr>
                         <td>${label}</td>
-                        <td>${(m.precision*100).toFixed(1)}%</td>
-                        <td>${(m.recall*100).toFixed(1)}%</td>
-                        <td>${(m.f1*100).toFixed(1)}%</td>
-                        <td>${m.accuracy !== undefined ? (m.accuracy*100).toFixed(1) + '%' : '-'}</td>
+                        <td>${(m.precision * 100).toFixed(1)}%</td>
+                        <td>${(m.recall * 100).toFixed(1)}%</td>
+                        <td>${(m.f1 * 100).toFixed(1)}%</td>
+                        <td>${m.accuracy !== undefined ? (m.accuracy * 100).toFixed(1) + '%' : '-'}</td>
                         <td>${m.false_positives}</td>
                         <td>${m.false_negatives}</td>
                         <td>${m.true_positives !== undefined ? m.true_positives : '-'}</td>
@@ -1060,10 +1087,10 @@ function runRbaMetricsComparison() {
                     if (m) {
                         html += `<tr>
                             <td>${key}</td>
-                            <td>${(m.precision*100).toFixed(1)}%</td>
-                            <td>${(m.recall*100).toFixed(1)}%</td>
-                            <td>${(m.f1*100).toFixed(1)}%</td>
-                            <td>${m.accuracy !== undefined ? (m.accuracy*100).toFixed(1) + '%' : '-'}</td>
+                            <td>${(m.precision * 100).toFixed(1)}%</td>
+                            <td>${(m.recall * 100).toFixed(1)}%</td>
+                            <td>${(m.f1 * 100).toFixed(1)}%</td>
+                            <td>${m.accuracy !== undefined ? (m.accuracy * 100).toFixed(1) + '%' : '-'}</td>
                             <td>${m.false_positives}</td>
                             <td>${m.false_negatives}</td>
                             <td>${m.true_positives !== undefined ? m.true_positives : '-'}</td>
@@ -1175,7 +1202,7 @@ function loadComparisonTab() {
 
     function renderTable(tableId, data) {
         const tbody = document.getElementById(tableId);
-        if(!tbody) return;
+        if (!tbody) return;
         tbody.innerHTML = '';
         data.forEach(row => {
             const tr = document.createElement('tr');
@@ -1412,6 +1439,6 @@ function loadComparisonTab() {
     renderDetailedMetrics('linuxTrialMetricsContainer', linuxDetailedMetricsData);
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     loadComparisonTab();
 });
