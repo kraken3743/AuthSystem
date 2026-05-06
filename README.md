@@ -2,8 +2,6 @@
 
 ## 📖 1. Overview
 
-![Architecture Flowchart](architecture_flowchart.png)
-
 This project is a comprehensive authentication and analytics system built with Java Spring Boot and a JavaScript frontend. It provides standard user authentication (registration and login) with role-based access control (ADMIN/USER).
 
 The system's core feature is its security analytics dashboard, which provides insights into login patterns with a focus on privacy. It uses differential privacy to obscure individual user data while still allowing for meaningful aggregate analysis. Moreover, the project deploys a robust Cryptographic IP Pseudonymization layer to ensure differential privacy is mathematically respected even at the dataset level, preventing raw network logging structures from leaking sensitive spatial identities. 
@@ -70,6 +68,8 @@ The architectural spine is heavily augmented by localized Python scripts driving
 *   **`post_meta_results.py`**: Functions as the deployment tunnel pushing the threshold-mapped JSON parameters securely into the Spring Boot Datastore APIs.
 
 ## ⚙️ 5. System Pipeline
+
+![Pipeline Flowchart](pipeline_flowchart.png)
 
 1. **User Interaction**
    - Users register and log in through the web UI.
