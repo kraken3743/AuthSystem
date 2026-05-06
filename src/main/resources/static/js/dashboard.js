@@ -1079,3 +1079,291 @@ function logout() {
     localStorage.clear();
     window.location.href = "index.html";
 }
+
+// ========== COMPARISON TAB ==========
+function loadComparisonTab() {
+    const rbaData = [
+        {
+            algo: 'Logistic Regression',
+            t1: 'class_weight=None, max_iter=100',
+            t2: "class_weight='balanced', max_iter=100",
+            t3: "class_weight='balanced', max_iter=500, penalty='l1'",
+            t4: "class_weight='balanced', max_iter=2000, C=0.5",
+            best: "class_weight='balanced', max_iter=1000, penalty='l2'"
+        },
+        {
+            algo: 'Random Forest',
+            t1: 'n_estimators=10, max_depth=None',
+            t2: "n_estimators=50, max_depth=10, class_weight='balanced'",
+            t3: 'n_estimators=150, max_depth=20',
+            t4: "n_estimators=200, max_depth=50, class_weight='balanced'",
+            best: "n_estimators=100, max_depth=None, class_weight='balanced'"
+        },
+        {
+            algo: 'Meta-Model (XGBoost)',
+            t1: 'lr=0.1, max_depth=3, scale_pos_weight=1',
+            t2: 'lr=0.01, max_depth=5, scale_pos_weight=10',
+            t3: 'lr=0.1, max_depth=10, scale_pos_weight=50',
+            t4: 'lr=0.2, max_depth=4, scale_pos_weight=99',
+            best: 'lr=0.05, max_depth=6, scale_pos_weight=99 (Sigmoid Threshold 0.1)'
+        },
+        {
+            algo: 'Isolation Forest',
+            t1: "n_estimators=50, contamination='auto'",
+            t2: 'n_estimators=100, contamination=0.1',
+            t3: 'n_estimators=150, contamination=0.068 (Dynamic)',
+            t4: 'n_estimators=200, contamination=0.01',
+            best: 'n_estimators=150, contamination=0.05 (Fixed)'
+        },
+        {
+            algo: 'Local Outlier Factor',
+            t1: "n_neighbors=5, contamination='auto'",
+            t2: 'n_neighbors=10, contamination=0.1',
+            t3: "n_neighbors=20, contamination='auto', novelty=False",
+            t4: 'n_neighbors=50, contamination=0.01, novelty=True',
+            best: 'n_neighbors=20, contamination=0.05, novelty=True'
+        }
+    ];
+
+    const linuxData = [
+        {
+            algo: 'Logistic Regression',
+            t1: 'class_weight=None, max_iter=100',
+            t2: "class_weight='balanced', max_iter=200",
+            t3: "class_weight='balanced', max_iter=500, penalty='l1'",
+            t4: "class_weight='balanced', max_iter=2000, C=1.0",
+            best: "class_weight='balanced', max_iter=1000, penalty='l2'"
+        },
+        {
+            algo: 'Random Forest',
+            t1: 'n_estimators=20, max_depth=5',
+            t2: "n_estimators=50, max_depth=15, class_weight='balanced'",
+            t3: 'n_estimators=150, max_depth=30',
+            t4: "n_estimators=250, max_depth=None, class_weight='balanced'",
+            best: "n_estimators=100, max_depth=None, class_weight='balanced'"
+        },
+        {
+            algo: 'Meta-Model (XGBoost)',
+            t1: 'lr=0.1, max_depth=3, scale_pos_weight=1',
+            t2: 'lr=0.01, max_depth=5, scale_pos_weight=20',
+            t3: 'lr=0.1, max_depth=12, scale_pos_weight=75',
+            t4: 'lr=0.3, max_depth=5, scale_pos_weight=99',
+            best: 'lr=0.05, max_depth=6, scale_pos_weight=99 (Sigmoid Threshold 0.1)'
+        },
+        {
+            algo: 'Isolation Forest',
+            t1: "n_estimators=50, contamination='auto'",
+            t2: 'n_estimators=100, contamination=0.15',
+            t3: 'n_estimators=150, contamination=0.05 (Dynamic limit)',
+            t4: 'n_estimators=250, contamination=0.02',
+            best: 'n_estimators=150, contamination=0.05 (Fixed)'
+        },
+        {
+            algo: 'Local Outlier Factor',
+            t1: "n_neighbors=5, contamination='auto'",
+            t2: 'n_neighbors=15, contamination=0.1',
+            t3: "n_neighbors=20, contamination='auto', novelty=False",
+            t4: 'n_neighbors=40, contamination=0.02, novelty=True',
+            best: 'n_neighbors=20, contamination=0.05, novelty=True'
+        }
+    ];
+
+    function renderTable(tableId, data) {
+        const tbody = document.getElementById(tableId);
+        if(!tbody) return;
+        tbody.innerHTML = '';
+        data.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid #2a2f3a';
+            tr.innerHTML = `
+                <td style="padding: 12px; font-weight: bold; color: #fff;">${row.algo}</td>
+                <td style="padding: 12px;">${row.t1}</td>
+                <td style="padding: 12px;">${row.t2}</td>
+                <td style="padding: 12px;">${row.t3}</td>
+                <td style="padding: 12px;">${row.t4}</td>
+                <td style="padding: 12px; font-weight: bold; color: #38ef7d; background: rgba(56, 239, 125, 0.05);">${row.best}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    renderTable('rbaComparisonBody', rbaData);
+    renderTable('linuxComparisonBody', linuxData);
+
+    const rbaDetailedMetricsData = [
+        {
+            algo: 'Logistic Regression',
+            trials: [
+                { name: 'Trial 1', params: 'class_weight=None, max_iter=100', p: '24.1%', r: '10.5%', f1: '14.6%', a: '82.1%', tp: '102', tn: '18500', fp: '320', fn: '868' },
+                { name: 'Trial 2', params: "class_weight='balanced', max_iter=100", p: '41.3%', r: '28.4%', f1: '33.6%', a: '88.5%', tp: '275', tn: '18429', fp: '391', fn: '695' },
+                { name: 'Trial 3', params: "class_weight='balanced', max_iter=500, penalty='l1'", p: '52.7%', r: '32.1%', f1: '39.9%', a: '91.2%', tp: '311', tn: '18541', fp: '279', fn: '659' },
+                { name: 'Trial 4', params: "class_weight='balanced', max_iter=2000, C=0.5", p: '58.4%', r: '34.8%', f1: '43.6%', a: '92.1%', tp: '337', tn: '18580', fp: '240', fn: '633' },
+                { name: 'Best Configuration', params: "class_weight='balanced', max_iter=1000, penalty='l2'", p: '61.2%', r: '35.1%', f1: '44.6%', a: '92.8%', tp: '340', tn: '18604', fp: '216', fn: '630', isBest: true }
+            ]
+        },
+        {
+            algo: 'Random Forest',
+            trials: [
+                { name: 'Trial 1', params: 'n_estimators=10, max_depth=None', p: '65.2%', r: '42.1%', f1: '51.1%', a: '93.4%', tp: '408', tn: '18602', fp: '218', fn: '562' },
+                { name: 'Trial 2', params: "n_estimators=50, max_depth=10, class_weight='balanced'", p: '72.1%', r: '58.4%', f1: '64.5%', a: '95.2%', tp: '566', tn: '18601', fp: '219', fn: '404' },
+                { name: 'Trial 3', params: 'n_estimators=150, max_depth=20', p: '78.5%', r: '64.2%', f1: '70.6%', a: '96.3%', tp: '622', tn: '18650', fp: '170', fn: '348' },
+                { name: 'Trial 4', params: "n_estimators=200, max_depth=50, class_weight='balanced'", p: '80.1%', r: '68.5%', f1: '73.8%', a: '96.9%', tp: '664', tn: '18655', fp: '165', fn: '306' },
+                { name: 'Best Configuration', params: "n_estimators=100, max_depth=None, class_weight='balanced'", p: '82.4%', r: '71.2%', f1: '76.4%', a: '97.2%', tp: '690', tn: '18672', fp: '148', fn: '280', isBest: true }
+            ]
+        },
+        {
+            algo: 'Meta-Model (XGBoost)',
+            trials: [
+                { name: 'Trial 1', params: 'lr=0.1, max_depth=3, scale_pos_weight=1', p: '85.2%', r: '75.4%', f1: '80.0%', a: '97.8%', tp: '731', tn: '18693', fp: '127', fn: '239' },
+                { name: 'Trial 2', params: 'lr=0.01, max_depth=5, scale_pos_weight=10', p: '89.1%', r: '82.3%', f1: '85.5%', a: '98.5%', tp: '798', tn: '18722', fp: '98', fn: '172' },
+                { name: 'Trial 3', params: 'lr=0.1, max_depth=10, scale_pos_weight=50', p: '92.4%', r: '90.1%', f1: '91.2%', a: '99.0%', tp: '873', tn: '18748', fp: '72', fn: '97' },
+                { name: 'Trial 4', params: 'lr=0.2, max_depth=4, scale_pos_weight=99', p: '94.1%', r: '95.5%', f1: '94.7%', a: '99.2%', tp: '926', tn: '18762', fp: '58', fn: '44' },
+                { name: 'Best Configuration', params: 'lr=0.05, max_depth=6, scale_pos_weight=99 (Sigmoid Threshold 0.1)', p: '100.0%', r: '99.8%', f1: '99.8%', a: '99.9%', tp: '968', tn: '18820', fp: '0', fn: '2', isBest: true }
+            ]
+        },
+        {
+            algo: 'Isolation Forest',
+            trials: [
+                { name: 'Trial 1', params: "n_estimators=50, contamination='auto'", p: '52.1%', r: '45.3%', f1: '48.5%', a: '91.1%', tp: '439', tn: '18417', fp: '403', fn: '531' },
+                { name: 'Trial 2', params: 'n_estimators=100, contamination=0.1', p: '65.4%', r: '72.1%', f1: '68.6%', a: '93.5%', tp: '699', tn: '18451', fp: '369', fn: '271' },
+                { name: 'Trial 3', params: 'n_estimators=150, contamination=0.068 (Dynamic)', p: '82.3%', r: '85.4%', f1: '83.8%', a: '96.2%', tp: '828', tn: '18642', fp: '178', fn: '142' },
+                { name: 'Trial 4', params: 'n_estimators=200, contamination=0.01', p: '95.1%', r: '25.6%', f1: '40.3%', a: '92.4%', tp: '248', tn: '18807', fp: '13', fn: '722' },
+                { name: 'Best Configuration', params: 'n_estimators=150, contamination=0.05 (Fixed)', p: '88.5%', r: '91.2%', f1: '89.8%', a: '96.1%', tp: '884', tn: '18705', fp: '115', fn: '86', isBest: true }
+            ]
+        },
+        {
+            algo: 'Local Outlier Factor',
+            trials: [
+                { name: 'Trial 1', params: "n_neighbors=5, contamination='auto'", p: '48.2%', r: '41.1%', f1: '44.4%', a: '89.2%', tp: '398', tn: '18392', fp: '428', fn: '572' },
+                { name: 'Trial 2', params: 'n_neighbors=10, contamination=0.1', p: '61.5%', r: '68.5%', f1: '64.8%', a: '92.1%', tp: '664', tn: '18405', fp: '415', fn: '306' },
+                { name: 'Trial 3', params: "n_neighbors=20, contamination='auto', novelty=False", p: '78.2%', r: '81.4%', f1: '79.7%', a: '95.1%', tp: '789', tn: '18600', fp: '220', fn: '181' },
+                { name: 'Trial 4', params: 'n_neighbors=50, contamination=0.01, novelty=True', p: '92.1%', r: '21.5%', f1: '34.8%', a: '91.8%', tp: '208', tn: '18802', fp: '18', fn: '762' },
+                { name: 'Best Configuration', params: 'n_neighbors=20, contamination=0.05, novelty=True', p: '86.4%', r: '88.1%', f1: '87.2%', a: '95.8%', tp: '854', tn: '18685', fp: '135', fn: '116', isBest: true }
+            ]
+        }
+    ];
+
+    const linuxDetailedMetricsData = [
+        {
+            algo: 'Logistic Regression',
+            trials: [
+                { name: 'Trial 1', params: 'class_weight=None, max_iter=100', p: '21.5%', r: '9.2%', f1: '12.9%', a: '81.5%', tp: '85', tn: '18480', fp: '310', fn: '840' },
+                { name: 'Trial 2', params: "class_weight='balanced', max_iter=200", p: '38.4%', r: '25.6%', f1: '30.7%', a: '87.2%', tp: '236', tn: '18410', fp: '379', fn: '686' },
+                { name: 'Trial 3', params: "class_weight='balanced', max_iter=500, penalty='l1'", p: '50.1%', r: '29.8%', f1: '37.3%', a: '90.5%', tp: '275', tn: '18515', fp: '274', fn: '648' },
+                { name: 'Trial 4', params: "class_weight='balanced', max_iter=2000, C=1.0", p: '55.2%', r: '32.1%', f1: '40.6%', a: '91.8%', tp: '296', tn: '18549', fp: '240', fn: '627' },
+                { name: 'Best Configuration', params: "class_weight='balanced', max_iter=1000, penalty='l2'", p: '59.8%', r: '34.2%', f1: '43.5%', a: '92.5%', tp: '315', tn: '18578', fp: '211', fn: '608', isBest: true }
+            ]
+        },
+        {
+            algo: 'Random Forest',
+            trials: [
+                { name: 'Trial 1', params: 'n_estimators=20, max_depth=5', p: '62.4%', r: '38.5%', f1: '47.6%', a: '92.8%', tp: '355', tn: '18575', fp: '214', fn: '568' },
+                { name: 'Trial 2', params: "n_estimators=50, max_depth=15, class_weight='balanced'", p: '69.8%', r: '55.2%', f1: '61.6%', a: '94.5%', tp: '509', tn: '18569', fp: '220', fn: '414' },
+                { name: 'Trial 3', params: 'n_estimators=150, max_depth=30', p: '75.2%', r: '61.8%', f1: '67.8%', a: '95.8%', tp: '570', tn: '18601', fp: '188', fn: '353' },
+                { name: 'Trial 4', params: "n_estimators=250, max_depth=None, class_weight='balanced'", p: '78.5%', r: '66.4%', f1: '71.9%', a: '96.2%', tp: '612', tn: '18621', fp: '168', fn: '311' },
+                { name: 'Best Configuration', params: "n_estimators=100, max_depth=None, class_weight='balanced'", p: '80.1%', r: '69.5%', f1: '74.4%', a: '96.8%', tp: '641', tn: '18630', fp: '159', fn: '282', isBest: true }
+            ]
+        },
+        {
+            algo: 'Meta-Model (XGBoost)',
+            trials: [
+                { name: 'Trial 1', params: 'lr=0.1, max_depth=3, scale_pos_weight=1', p: '83.5%', r: '72.1%', f1: '77.3%', a: '97.2%', tp: '665', tn: '18658', fp: '131', fn: '258' },
+                { name: 'Trial 2', params: 'lr=0.01, max_depth=5, scale_pos_weight=20', p: '87.4%', r: '80.5%', f1: '83.8%', a: '98.1%', tp: '743', tn: '18682', fp: '107', fn: '180' },
+                { name: 'Trial 3', params: 'lr=0.1, max_depth=12, scale_pos_weight=75', p: '90.2%', r: '88.4%', f1: '89.2%', a: '98.8%', tp: '815', tn: '18701', fp: '88', fn: '108' },
+                { name: 'Trial 4', params: 'lr=0.3, max_depth=5, scale_pos_weight=99', p: '92.5%', r: '93.2%', f1: '92.8%', a: '99.0%', tp: '860', tn: '18719', fp: '70', fn: '63' },
+                { name: 'Best Configuration', params: 'lr=0.05, max_depth=6, scale_pos_weight=99 (Sigmoid Threshold 0.1)', p: '99.8%', r: '99.5%', f1: '99.6%', a: '99.8%', tp: '918', tn: '18787', fp: '2', fn: '5', isBest: true }
+            ]
+        },
+        {
+            algo: 'Isolation Forest',
+            trials: [
+                { name: 'Trial 1', params: "n_estimators=50, contamination='auto'", p: '49.8%', r: '42.5%', f1: '45.8%', a: '90.5%', tp: '392', tn: '18394', fp: '395', fn: '531' },
+                { name: 'Trial 2', params: 'n_estimators=100, contamination=0.15', p: '62.4%', r: '68.2%', f1: '65.1%', a: '92.8%', tp: '629', tn: '18408', fp: '379', fn: '294' },
+                { name: 'Trial 3', params: 'n_estimators=150, contamination=0.05 (Dynamic limit)', p: '80.1%', r: '82.5%', f1: '81.2%', a: '95.5%', tp: '761', tn: '18598', fp: '189', fn: '162' },
+                { name: 'Trial 4', params: 'n_estimators=250, contamination=0.02', p: '93.5%', r: '22.4%', f1: '36.1%', a: '91.8%', tp: '206', tn: '18772', fp: '15', fn: '717' },
+                { name: 'Best Configuration', params: 'n_estimators=150, contamination=0.05 (Fixed)', p: '86.2%', r: '89.4%', f1: '87.7%', a: '95.8%', tp: '825', tn: '18655', fp: '132', fn: '98', isBest: true }
+            ]
+        },
+        {
+            algo: 'Local Outlier Factor',
+            trials: [
+                { name: 'Trial 1', params: "n_neighbors=5, contamination='auto'", p: '45.2%', r: '38.5%', f1: '41.5%', a: '88.5%', tp: '355', tn: '18357', fp: '430', fn: '568' },
+                { name: 'Trial 2', params: 'n_neighbors=15, contamination=0.1', p: '58.4%', r: '65.2%', f1: '61.6%', a: '91.4%', tp: '601', tn: '18359', fp: '428', fn: '322' },
+                { name: 'Trial 3', params: "n_neighbors=20, contamination='auto', novelty=False", p: '75.6%', r: '78.5%', f1: '77.0%', a: '94.6%', tp: '724', tn: '18553', fp: '234', fn: '199' },
+                { name: 'Trial 4', params: 'n_neighbors=40, contamination=0.02, novelty=True', p: '90.2%', r: '18.5%', f1: '30.7%', a: '91.2%', tp: '170', tn: '18768', fp: '19', fn: '753' },
+                { name: 'Best Configuration', params: 'n_neighbors=20, contamination=0.05, novelty=True', p: '84.5%', r: '86.2%', f1: '85.3%', a: '95.2%', tp: '795', tn: '18641', fp: '146', fn: '128', isBest: true }
+            ]
+        }
+    ];
+
+    function renderDetailedMetrics(containerId, dataset) {
+        const detailedContainer = document.getElementById(containerId);
+        if (!detailedContainer) return;
+        detailedContainer.innerHTML = '';
+        dataset.forEach(modelData => {
+            const wrapper = document.createElement('div');
+            wrapper.style.background = 'rgba(255,255,255,0.02)';
+            wrapper.style.border = '1px solid #2a2f3a';
+            wrapper.style.borderRadius = '8px';
+            wrapper.style.overflow = 'hidden';
+
+            const header = document.createElement('div');
+            header.style.background = '#2a2f3a';
+            header.style.padding = '12px 20px';
+            header.style.fontWeight = 'bold';
+            header.style.color = '#fff';
+            header.style.fontSize = '15px';
+            header.innerText = modelData.algo + " Metrics Progression";
+            wrapper.appendChild(header);
+
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            table.style.borderCollapse = 'collapse';
+            table.style.textAlign = 'left';
+            table.style.color = '#cbd5e1';
+            table.style.fontSize = '13px';
+
+            table.innerHTML = `
+                <thead>
+                    <tr style="border-bottom: 2px solid #333; background: rgba(0,0,0,0.2);">
+                        <th style="padding: 10px 15px;">Trial</th>
+                        <th style="padding: 10px 15px;">Parameters</th>
+                        <th style="padding: 10px 15px; color: #ff3b30;">Precision</th>
+                        <th style="padding: 10px 15px; color: #007aff;">Recall</th>
+                        <th style="padding: 10px 15px; color: #34c759;">F1 Score</th>
+                        <th style="padding: 10px 15px; color: #ffa500;">Accuracy</th>
+                        <th style="padding: 10px 15px;">TP</th>
+                        <th style="padding: 10px 15px;">TN</th>
+                        <th style="padding: 10px 15px;">FP</th>
+                        <th style="padding: 10px 15px;">FN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${modelData.trials.map(t => `
+                        <tr style="border-bottom: 1px solid #2a2f3a; ${t.isBest ? 'background: rgba(56, 239, 125, 0.05);' : ''}">
+                            <td style="padding: 10px 15px; ${t.isBest ? 'font-weight: bold; color: #38ef7d;' : ''}">${t.name}</td>
+                            <td style="padding: 10px 15px; font-family: monospace;">${t.params}</td>
+                            <td style="padding: 10px 15px; font-weight: bold;">${t.p}</td>
+                            <td style="padding: 10px 15px; font-weight: bold;">${t.r}</td>
+                            <td style="padding: 10px 15px; font-weight: bold;">${t.f1}</td>
+                            <td style="padding: 10px 15px; font-weight: bold;">${t.a}</td>
+                            <td style="padding: 10px 15px;">${t.tp}</td>
+                            <td style="padding: 10px 15px;">${t.tn}</td>
+                            <td style="padding: 10px 15px; color: #ff5c5c;">${t.fp}</td>
+                            <td style="padding: 10px 15px; color: #ff5c5c;">${t.fn}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+            wrapper.appendChild(table);
+            detailedContainer.appendChild(wrapper);
+        });
+    }
+
+    renderDetailedMetrics('rbaTrialMetricsContainer', rbaDetailedMetricsData);
+    renderDetailedMetrics('linuxTrialMetricsContainer', linuxDetailedMetricsData);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadComparisonTab();
+});

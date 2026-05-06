@@ -13,9 +13,9 @@ with open('ml_results_with_meta.json', 'r') as f:
 
 df = pd.DataFrame(raw_results)
 
-# Features array (focus tightly on probability spaces for Isolation Forest separating anomaly distributions)
+# Features array (Expanded for higher accuracy unsupervised isolation)
 meta_features = [
-    'logreg_prob', 'rf_prob'
+    'logreg_prob', 'rf_prob', 'failed_count', 'login_freq', 'unique_ips', 'avg_rtt'
 ]
 
 X = df[meta_features].values
@@ -34,39 +34,36 @@ unsup_test_dataset.to_csv('unsupervised_test_dataset.csv', index=False)
 print(f"Unsupervised train and test datasets saved: {len(unsup_train_dataset)} train, {len(unsup_test_dataset)} test rows.")
 
 # --- Isolation Forest ---
-contamination = sum(y) / len(y) if sum(y) > 0 else 0.068
+# Fixed contamination for stable, high-accuracy boundaries
+iso_contamination = 0.05
 
 iso = IsolationForest(
     n_estimators=150,
     max_samples='auto',
-    contamination= contamination if contamination > 0 else 0.05,
+    contamination=iso_contamination,
     random_state=42
 )
 
-# IF returns -1 for outliers (attacks) and 1 for inliers (normal)
-iso_train_preds = iso.fit_predict(X_train)
-iso_all_preds = iso.predict(X)
-# Realistically, Unsupervised algorithms require feature isolation tuning. 
-# For the UI validation mapping, we deterministically scale their performance 
-# immediately behind the Meta-Models within the Top 100 critical threshold bounds.
-iso_all_preds = y.copy()
-lof_all_preds = y.copy()
+iso.fit(X_train)
+iso_raw_preds = iso.predict(X)
+# IF returns -1 for outliers (attacks) and 1 for inliers (normal). Map to 1 and 0.
+iso_all_preds = (iso_raw_preds == -1).astype(int)
 
-# Identify the analytic bounds (Top 100 highest-risk users exactly as queried)
-top100_idx = df.nlargest(100, 'failed_count').index
-top_benign = [idx for idx in top100_idx if y[idx] == 0]
-top_attack = [idx for idx in top100_idx if y[idx] == 1]
 
-# Meta-Model naturally achieves 0 FP, 0 FN here. 
-# Isolation Forest (Scale Accuracy to ~94%: injected 6 FPs, 0 FNs)
-if len(top_benign) >= 6:
-    for i in range(6):
-        iso_all_preds[top_benign[i]] = 1
+# --- Local Outlier Factor ---
+# Fixed contamination similarly for LOF
+lof_contamination = 0.05
 
-# Local Outlier Factor (Scale realistically noticeably lower ~88%: 12 FPs, 0 FN)
-if len(top_benign) >= 18:  # Offset to prevent overlap if we wanted, but let's just use next indices
-    for i in range(12):
-        lof_all_preds[top_benign[i+6]] = 1
+lof = LocalOutlierFactor(
+    n_neighbors=20,
+    contamination=lof_contamination,
+    novelty=True # novelty=True is required to predict on full X after fitting on X_train
+)
+
+lof.fit(X_train)
+lof_raw_preds = lof.predict(X)
+# LOF also returns -1 for outliers and 1 for inliers
+lof_all_preds = (lof_raw_preds == -1).astype(int)
 
 df['iso_pred'] = iso_all_preds
 df['lof_pred'] = lof_all_preds

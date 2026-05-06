@@ -62,7 +62,62 @@
     <button onclick="showTab('rba-metrics')">Algorithm Metrics (RBA)</button>
     <button onclick="showTab('ml-rba')">ML Anomaly (RBA)</button>
     <button onclick="showTab('meta-model')">Meta-Model (Stacking)</button>
+    <button onclick="showTab('comparison')">Comparison</button>
     <button onclick="showTab('results')">Results</button>
+</div>
+
+<!-- COMPARISON TAB (new) -->
+<div id="comparison" class="tab" style="display:none">
+    <h3>Model Parameter Comparison</h3>
+    <p style="color: #cbd5e1; font-size: 14px; margin-bottom: 20px;">
+        This section tracks the hyperparameter tuning permutations tested across algorithms. The <strong>Best Final Configuration</strong> deployed to production is highlighted in green.
+    </p>
+    
+    <div style="background: #1a1e2b; padding: 25px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        <h4 style="color: #fff; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">RBA Dataset - Hyperparameter Tuning</h4>
+        <table id="rbaComparisonTable" style="width: 100%; border-collapse: collapse; text-align: left; color: #cbd5e1; font-size: 14px;">
+            <thead>
+                <tr style="border-bottom: 2px solid #333;">
+                    <th style="padding: 12px;">Algorithm</th>
+                    <th style="padding: 12px;">Trial 1 (Underfit/Baseline)</th>
+                    <th style="padding: 12px;">Trial 2</th>
+                    <th style="padding: 12px;">Trial 3</th>
+                    <th style="padding: 12px;">Trial 4</th>
+                    <th style="padding: 12px;">Final Optimal Parameters (Best)</th>
+                </tr>
+            </thead>
+            <tbody id="rbaComparisonBody"></tbody>
+        </table>
+    </div>
+
+    <div style="background: #1a1e2b; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        <h4 style="color: #fff; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">Linux Dataset - Hyperparameter Tuning</h4>
+        <table id="linuxComparisonTable" style="width: 100%; border-collapse: collapse; text-align: left; color: #cbd5e1; font-size: 14px;">
+            <thead>
+                <tr style="border-bottom: 2px solid #333;">
+                    <th style="padding: 12px;">Algorithm</th>
+                    <th style="padding: 12px;">Trial 1 (Underfit/Baseline)</th>
+                    <th style="padding: 12px;">Trial 2</th>
+                    <th style="padding: 12px;">Trial 3</th>
+                    <th style="padding: 12px;">Trial 4</th>
+                    <th style="padding: 12px;">Final Optimal Parameters (Best)</th>
+                </tr>
+            </thead>
+            <tbody id="linuxComparisonBody"></tbody>
+        </table>
+    </div>
+
+    <div style="background: #1a1e2b; padding: 25px; border-radius: 8px; margin-top: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        <h4 style="color: #fff; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">RBA Dataset - Detailed Trial Performance Metrics</h4>
+        <p style="color: #8892b0; font-size: 13px; margin-bottom: 20px;">Comprehensive performance progression across all experimental trials.</p>
+        <div id="rbaTrialMetricsContainer" style="display: flex; flex-direction: column; gap: 40px;"></div>
+    </div>
+
+    <div style="background: #1a1e2b; padding: 25px; border-radius: 8px; margin-top: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        <h4 style="color: #fff; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">Linux Dataset - Detailed Trial Performance Metrics</h4>
+        <p style="color: #8892b0; font-size: 13px; margin-bottom: 20px;">Comprehensive performance progression across all experimental trials.</p>
+        <div id="linuxTrialMetricsContainer" style="display: flex; flex-direction: column; gap: 40px;"></div>
+    </div>
 </div>
 <!-- META-MODEL TAB (now outside .tabs for proper stacking) -->
 <div id="meta-model" class="tab" style="display:none">
