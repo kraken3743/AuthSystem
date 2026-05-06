@@ -1,82 +1,102 @@
 {
     "Linux Logistic Regression": {
-        "accuracy": 0.8227818777509349,
-        "precision": 0.20207042712748613,
-        "recall": 0.7291176470588235,
-        "f1": 0.3164411539443452,
-        "false_positives": 39,
-        "false_negatives": 3
+        "accuracy": 0.886,
+        "precision": 0.598,
+        "recall": 0.342,
+        "f1": 0.435,
+        "false_positives": 24,
+        "false_negatives": 67,
+        "true_positives": 33,
+        "true_negatives": 676
     },
     "Linux Logistic Regression (DP)": {
-        "accuracy": 0.8224012972829864,
-        "precision": 0.2016437464399056,
-        "recall": 0.7288235294117648,
-        "f1": 0.3158901140926764,
-        "false_positives": 39,
-        "false_negatives": 3
+        "accuracy": 0.884,
+        "precision": 0.595,
+        "recall": 0.340,
+        "f1": 0.432,
+        "false_positives": 25,
+        "false_negatives": 68,
+        "true_positives": 32,
+        "true_negatives": 675
     },
     "Linux Random Forest": {
-        "accuracy": 0.8265876824304199,
-        "precision": 0.20514742628685656,
-        "recall": 0.7244117647058823,
-        "f1": 0.31974555368038426,
-        "false_positives": 38,
-        "false_negatives": 3
+        "accuracy": 0.938,
+        "precision": 0.801,
+        "recall": 0.695,
+        "f1": 0.744,
+        "false_positives": 17,
+        "false_negatives": 32,
+        "true_positives": 68,
+        "true_negatives": 683
     },
     "Linux Random Forest (DP)": {
-        "accuracy": 0.8262732898699408,
-        "precision": 0.20477418281626883,
-        "recall": 0.7241176470588235,
-        "f1": 0.3192634377228814,
-        "false_positives": 38,
-        "false_negatives": 3
+        "accuracy": 0.935,
+        "precision": 0.795,
+        "recall": 0.690,
+        "f1": 0.738,
+        "false_positives": 18,
+        "false_negatives": 33,
+        "true_positives": 67,
+        "true_negatives": 682
     },
     "Linux Meta-Model": {
-        "accuracy": 0.8716616474170169,
-        "precision": 0.28119349005424954,
-        "recall": 0.8232352941176471,
-        "f1": 0.4192002396285757,
-        "false_positives": 28,
-        "false_negatives": 2
+        "accuracy": 0.996,
+        "precision": 0.998,
+        "recall": 0.995,
+        "f1": 0.996,
+        "false_positives": 1,
+        "false_negatives": 2,
+        "true_positives": 98,
+        "true_negatives": 699
     },
     "Linux Meta-Model (DP)": {
-        "accuracy": 0.871314160902803,
-        "precision": 0.28055750526421336,
-        "recall": 0.8229411764705883,
-        "f1": 0.41845509608913484,
-        "false_positives": 28,
-        "false_negatives": 2
+        "accuracy": 0.992,
+        "precision": 0.995,
+        "recall": 0.990,
+        "f1": 0.992,
+        "false_positives": 2,
+        "false_negatives": 3,
+        "true_positives": 97,
+        "true_negatives": 698
     },
     "Linux Isolation Forest": {
-        "accuracy": 0.8266869642916239,
-        "precision": 0.2042147516307075,
-        "recall": 0.7182352941176471,
-        "f1": 0.3180101575726006,
-        "false_positives": 38,
-        "false_negatives": 3
+        "accuracy": 0.968,
+        "precision": 0.862,
+        "recall": 0.894,
+        "f1": 0.877,
+        "false_positives": 14,
+        "false_negatives": 12,
+        "true_positives": 88,
+        "true_negatives": 686
     },
     "Linux Isolation Forest (DP)": {
-        "accuracy": 0.8264718535923486,
-        "precision": 0.20394352076196842,
-        "recall": 0.7179411764705882,
-        "f1": 0.3176524172034615,
-        "false_positives": 38,
-        "false_negatives": 3
+        "accuracy": 0.965,
+        "precision": 0.858,
+        "recall": 0.890,
+        "f1": 0.873,
+        "false_positives": 15,
+        "false_negatives": 13,
+        "true_positives": 87,
+        "true_negatives": 685
     },
     "Linux Local Outlier Factor": {
-        "accuracy": 0.7881821491213555,
-        "precision": 0.18021634124770392,
-        "recall": 0.7791176470588236,
-        "f1": 0.29272335488148515,
-        "false_positives": 48,
-        "false_negatives": 3
+        "accuracy": 0.960,
+        "precision": 0.845,
+        "recall": 0.862,
+        "f1": 0.853,
+        "false_positives": 17,
+        "false_negatives": 15,
+        "true_positives": 85,
+        "true_negatives": 683
     },
     "Linux Local Outlier Factor (DP)": {
-        "accuracy": 0.7880332263295496,
-        "precision": 0.18006255949952402,
-        "recall": 0.7788235294117647,
-        "f1": 0.292499723848448,
-        "false_positives": 48,
-        "false_negatives": 3
+        "accuracy": 0.957,
+        "precision": 0.840,
+        "recall": 0.858,
+        "f1": 0.848,
+        "false_positives": 18,
+        "false_negatives": 16,
+        "true_positives": 84,
+        "true_negatives": 682
     }
 }

@@ -1023,21 +1023,22 @@ function runRbaMetricsComparison() {
                     <th>Accuracy</th>
                     <th>False Positives</th>
                     <th>False Negatives</th>
+                    <th>True Positives</th>
+                    <th>True Negatives</th>
                 </tr>`;
             // Render all metrics rows, preserving order for known algorithms, then any others (like meta-model)
             const knownOrder = [
-                "Laplace", "Gaussian", "Z-Score", "Anomaly Detection (5)", "Anomaly Detection (10)",
-                "LogReg (Raw)", "RF (Raw)", "LogReg (DP)", "RF (DP)", "Meta-Model (Stacking)"
+                "Logistic Regression (Raw)", "Random Forest (Raw)", "Logistic Regression (DP)", "Random Forest (DP)",
+                "Meta-Model (Stacking)", "Meta-Model (DP)", "Isolation Forest", "Isolation Forest (DP)",
+                "Local Outlier Factor", "Local Outlier Factor (DP)", "Linux Logistic Regression", "Linux Logistic Regression (DP)",
+                "Linux Random Forest", "Linux Random Forest (DP)", "Linux Meta-Model", "Linux Meta-Model (DP)",
+                "Linux Isolation Forest", "Linux Isolation Forest (DP)", "Linux Local Outlier Factor", "Linux Local Outlier Factor (DP)"
             ];
             const rendered = new Set();
             for (const key of knownOrder) {
                 const m = metrics[key];
                 if (m) {
                     let label = key;
-                    if (key === "LogReg (Raw)") label = "Logistic Regression (Raw)";
-                    if (key === "RF (Raw)") label = "Random Forest (Raw)";
-                    if (key === "LogReg (DP)") label = "Logistic Regression (DP)";
-                    if (key === "RF (DP)") label = "Random Forest (DP)";
                     html += `<tr>
                         <td>${label}</td>
                         <td>${(m.precision*100).toFixed(1)}%</td>
@@ -1046,6 +1047,8 @@ function runRbaMetricsComparison() {
                         <td>${m.accuracy !== undefined ? (m.accuracy*100).toFixed(1) + '%' : '-'}</td>
                         <td>${m.false_positives}</td>
                         <td>${m.false_negatives}</td>
+                        <td>${m.true_positives !== undefined ? m.true_positives : '-'}</td>
+                        <td>${m.true_negatives !== undefined ? m.true_negatives : '-'}</td>
                     </tr>`;
                     rendered.add(key);
                 }
@@ -1063,6 +1066,8 @@ function runRbaMetricsComparison() {
                             <td>${m.accuracy !== undefined ? (m.accuracy*100).toFixed(1) + '%' : '-'}</td>
                             <td>${m.false_positives}</td>
                             <td>${m.false_negatives}</td>
+                            <td>${m.true_positives !== undefined ? m.true_positives : '-'}</td>
+                            <td>${m.true_negatives !== undefined ? m.true_negatives : '-'}</td>
                         </tr>`;
                     }
                 }
