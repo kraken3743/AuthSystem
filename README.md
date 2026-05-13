@@ -33,7 +33,7 @@ The system is designed to detect anomalies based on login failures, both across 
 | **Frontend** | HTML, CSS, JavaScript (ES6)                      |
 | **Charting** | Chart.js                                         |
 | **Build Tool** | Maven                                            |
-| **Machine Learning**| Python, Pandas, Scikit-Learn, XGBoost, Isolation Forest, Local Outlier Factor|
+| **Machine Learning**| Python, Pandas, Scikit-Learn, XGBoost,Random Forest, Logistic Regression, Isolation Forest, Local Outlier Factor|
 | **Differential Privacy Architecture** | HMAC-SHA256 Ephemeral Tokenization (`os.urandom`), Laplace/Gaussian Distributions |
 
 ## 🏗️ 4. System Architecture

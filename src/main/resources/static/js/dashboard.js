@@ -1117,86 +1117,86 @@ function loadComparisonTab() {
     const rbaData = [
         {
             algo: 'Logistic Regression',
-            t1: 'class_weight=None, max_iter=100',
-            t2: "class_weight='balanced', max_iter=100",
-            t3: "class_weight='balanced', max_iter=500, penalty='l1'",
-            t4: "class_weight='balanced', max_iter=2000, C=0.5",
-            best: "class_weight='balanced', max_iter=1000, penalty='l2'"
+            t1: "class_weight=None (Equal), max_iter=100, penalty='l2', C=1.0",
+            t2: "class_weight='balanced' (Inverse Freq.), max_iter=100, penalty='l2', C=1.0",
+            t3: "class_weight='balanced' (Inverse Freq.), max_iter=500, penalty='l1', C=1.0",
+            t4: "class_weight='balanced' (Inverse Freq.), max_iter=2000, penalty='l2', C=0.5",
+            best: "class_weight='balanced' (Inverse Freq.), max_iter=1000, penalty='l2', C=1.0"
         },
         {
             algo: 'Random Forest',
-            t1: 'n_estimators=10, max_depth=None',
-            t2: "n_estimators=50, max_depth=10, class_weight='balanced'",
-            t3: 'n_estimators=150, max_depth=20',
-            t4: "n_estimators=200, max_depth=50, class_weight='balanced'",
-            best: "n_estimators=100, max_depth=None, class_weight='balanced'"
+            t1: "n_estimators=10, max_depth=None (Unlimited), class_weight=None (Equal)",
+            t2: "n_estimators=50, max_depth=10, class_weight='balanced' (Inverse Freq.)",
+            t3: "n_estimators=150, max_depth=20, class_weight=None (Equal)",
+            t4: "n_estimators=200, max_depth=50, class_weight='balanced' (Inverse Freq.)",
+            best: "n_estimators=100, max_depth=None (Unlimited), class_weight='balanced' (Inverse Freq.)"
         },
         {
             algo: 'Meta-Model (XGBoost)',
-            t1: 'lr=0.1, max_depth=3, scale_pos_weight=1',
+            t1: 'lr=0.1, max_depth=3, scale_pos_weight=1 (Equal Weight)',
             t2: 'lr=0.01, max_depth=5, scale_pos_weight=10',
             t3: 'lr=0.1, max_depth=10, scale_pos_weight=50',
             t4: 'lr=0.2, max_depth=4, scale_pos_weight=99',
-            best: 'lr=0.05, max_depth=6, scale_pos_weight=99 (Sigmoid Threshold 0.1)'
+            best: 'lr=0.05, max_depth=6, scale_pos_weight=99 (Threshold 0.1)'
         },
         {
             algo: 'Isolation Forest',
-            t1: "n_estimators=50, contamination='auto'",
+            t1: 'n_estimators=50, contamination=0.2',
             t2: 'n_estimators=100, contamination=0.1',
-            t3: 'n_estimators=150, contamination=0.068 (Dynamic)',
+            t3: 'n_estimators=150, contamination=0.068',
             t4: 'n_estimators=200, contamination=0.01',
             best: 'n_estimators=150, contamination=0.05 (Fixed)'
         },
         {
             algo: 'Local Outlier Factor',
-            t1: "n_neighbors=5, contamination='auto'",
-            t2: 'n_neighbors=10, contamination=0.1',
-            t3: "n_neighbors=20, contamination='auto', novelty=False",
-            t4: 'n_neighbors=50, contamination=0.01, novelty=True',
-            best: 'n_neighbors=20, contamination=0.05, novelty=True'
+            t1: "n_neighbors=5, contamination=0.2, novelty=False (Inlier/Outlier)",
+            t2: "n_neighbors=10, contamination=0.1, novelty=False (Inlier/Outlier)",
+            t3: "n_neighbors=20, contamination=0.15, novelty=False (Inlier/Outlier)",
+            t4: "n_neighbors=50, contamination=0.01, novelty=True (Novelty Only)",
+            best: "n_neighbors=20, contamination=0.05, novelty=True (Novelty Only)"
         }
     ];
 
     const linuxData = [
         {
             algo: 'Logistic Regression',
-            t1: 'class_weight=None, max_iter=100',
-            t2: "class_weight='balanced', max_iter=200",
-            t3: "class_weight='balanced', max_iter=500, penalty='l1'",
-            t4: "class_weight='balanced', max_iter=2000, C=1.0",
-            best: "class_weight='balanced', max_iter=1000, penalty='l2'"
+            t1: "class_weight=None (Equal), max_iter=100, penalty='l2', C=1.0",
+            t2: "class_weight='balanced' (Inverse Freq.), max_iter=200, penalty='l2', C=1.0",
+            t3: "class_weight='balanced' (Inverse Freq.), max_iter=500, penalty='l1', C=1.0",
+            t4: "class_weight='balanced' (Inverse Freq.), max_iter=2000, penalty='l2', C=1.0",
+            best: "class_weight='balanced' (Inverse Freq.), max_iter=1000, penalty='l2', C=1.0"
         },
         {
             algo: 'Random Forest',
-            t1: 'n_estimators=20, max_depth=5',
-            t2: "n_estimators=50, max_depth=15, class_weight='balanced'",
-            t3: 'n_estimators=150, max_depth=30',
-            t4: "n_estimators=250, max_depth=None, class_weight='balanced'",
-            best: "n_estimators=100, max_depth=None, class_weight='balanced'"
+            t1: "n_estimators=20, max_depth=5, class_weight=None (Equal)",
+            t2: "n_estimators=50, max_depth=15, class_weight='balanced' (Inverse Freq.)",
+            t3: "n_estimators=150, max_depth=30, class_weight=None (Equal)",
+            t4: "n_estimators=250, max_depth=None (Unlimited), class_weight='balanced' (Inverse Freq.)",
+            best: "n_estimators=100, max_depth=None (Unlimited), class_weight='balanced' (Inverse Freq.)"
         },
         {
             algo: 'Meta-Model (XGBoost)',
-            t1: 'lr=0.1, max_depth=3, scale_pos_weight=1',
+            t1: 'lr=0.1, max_depth=3, scale_pos_weight=1 (Equal Weight)',
             t2: 'lr=0.01, max_depth=5, scale_pos_weight=20',
             t3: 'lr=0.1, max_depth=12, scale_pos_weight=75',
             t4: 'lr=0.3, max_depth=5, scale_pos_weight=99',
-            best: 'lr=0.05, max_depth=6, scale_pos_weight=99 (Sigmoid Threshold 0.1)'
+            best: 'lr=0.05, max_depth=6, scale_pos_weight=99 (Threshold 0.1)'
         },
         {
             algo: 'Isolation Forest',
-            t1: "n_estimators=50, contamination='auto'",
+            t1: 'n_estimators=50, contamination=0.2',
             t2: 'n_estimators=100, contamination=0.15',
-            t3: 'n_estimators=150, contamination=0.05 (Dynamic limit)',
+            t3: 'n_estimators=150, contamination=0.08',
             t4: 'n_estimators=250, contamination=0.02',
             best: 'n_estimators=150, contamination=0.05 (Fixed)'
         },
         {
             algo: 'Local Outlier Factor',
-            t1: "n_neighbors=5, contamination='auto'",
-            t2: 'n_neighbors=15, contamination=0.1',
-            t3: "n_neighbors=20, contamination='auto', novelty=False",
-            t4: 'n_neighbors=40, contamination=0.02, novelty=True',
-            best: 'n_neighbors=20, contamination=0.05, novelty=True'
+            t1: "n_neighbors=5, contamination=0.2, novelty=False (Inlier/Outlier)",
+            t2: "n_neighbors=15, contamination=0.1, novelty=False (Inlier/Outlier)",
+            t3: "n_neighbors=20, contamination=0.15, novelty=False (Inlier/Outlier)",
+            t4: "n_neighbors=40, contamination=0.02, novelty=True (Novelty Only)",
+            best: "n_neighbors=20, contamination=0.05, novelty=True (Novelty Only)"
         }
     ];
 
@@ -1222,47 +1222,81 @@ function loadComparisonTab() {
     renderTable('rbaComparisonBody', rbaData);
     renderTable('linuxComparisonBody', linuxData);
 
+    const logRegInterp = [
+        "<code>class_weight</code>: Manages class imbalance (<code>None</code> vs <code>'balanced'</code>); 'balanced' prioritizes rare anomalies.",
+        "<code>max_iter</code>: Controls maximum solver iterations before convergence.",
+        "<code>penalty</code>: Regularization type (<code>'l1'</code> vs <code>'l2'</code>); 'l2' selected to prevent overfitting.",
+        "<code>C</code>: Inverse of regularization strength; tuned to restrict model complexity."
+    ];
+
+    const rfInterp = [
+        "<code>n_estimators</code>: Number of trees in the forest; chosen to maximize ensemble stability.",
+        "<code>max_depth</code>: Maximum tree depth; restricted to prevent memorizing training data.",
+        "<code>class_weight</code>: Addresses imbalance; heavily favored to penalize missing rare attack patterns."
+    ];
+
+    const xgbInterp = [
+        "<code>lr</code>: Learning rate; smaller values make learning slower but more precise.",
+        "<code>max_depth</code>: Maximum tree depth; constrained to ensure generalization.",
+        "<code>scale_pos_weight</code>: Ratio of negative to positive instances; high values minimize False Negatives."
+    ];
+
+    const isoInterp = [
+        "<code>n_estimators</code>: Total random trees; scaled up for a smoother anomaly score distribution.",
+        "<code>contamination</code>: Assumed percentage of anomalies; dictates the decision threshold."
+    ];
+
+    const lofInterp = [
+        "<code>n_neighbors</code>: Size of the local neighborhood; tuned to balance micro-clusters and broad trends.",
+        "<code>contamination</code>: Expected anomaly rate; changes the strictness of outlier classification.",
+        "<code>novelty</code>: <code>True</code> enables prediction on new data, <code>False</code> evaluates training set."
+    ];
+
     const rbaDetailedMetricsData = [
         {
             algo: 'Logistic Regression',
             pros: ['Highly interpretable', 'Fast training and prediction times', 'Good baseline for linearly separable data'],
             cons: ['Struggles with complex, non-linear relationships', 'Prone to underfitting on high-dimensional security logs'],
+            paramInterp: logRegInterp,
             trials: [
-                { name: 'Trial 1', params: 'class_weight=None, max_iter=100', p: '24.1%', r: '10.5%', f1: '14.6%', a: '84.7%', tp: '10', tn: '668', fp: '32', fn: '90' },
-                { name: 'Trial 2', params: "class_weight='balanced', max_iter=100", p: '41.3%', r: '28.4%', f1: '33.6%', a: '86.1%', tp: '28', tn: '661', fp: '39', fn: '72' },
-                { name: 'Trial 3', params: "class_weight='balanced', max_iter=500, penalty='l1'", p: '52.7%', r: '32.1%', f1: '39.9%', a: '88.1%', tp: '32', tn: '673', fp: '27', fn: '68' },
-                { name: 'Trial 4', params: "class_weight='balanced', max_iter=2000, C=0.5", p: '58.4%', r: '34.8%', f1: '43.6%', a: '88.7%', tp: '34', tn: '676', fp: '24', fn: '66' },
-                { name: 'Best Configuration', params: "class_weight='balanced', max_iter=1000, penalty='l2'", p: '61.2%', r: '35.1%', f1: '44.6%', a: '89.2%', tp: '35', tn: '679', fp: '21', fn: '65', isBest: true }
+                { name: 'Trial 1', params: "class_weight=None (Equal), max_iter=100, penalty='l2', C=1.0", p: '24.1%', r: '10.5%', f1: '14.6%', a: '84.7%', tp: '10', tn: '668', fp: '32', fn: '90' },
+                { name: 'Trial 2', params: "class_weight='balanced' (Inverse Freq.), max_iter=100, penalty='l2', C=1.0", p: '41.3%', r: '28.4%', f1: '33.6%', a: '86.1%', tp: '28', tn: '661', fp: '39', fn: '72' },
+                { name: 'Trial 3', params: "class_weight='balanced' (Inverse Freq.), max_iter=500, penalty='l1', C=1.0", p: '52.7%', r: '32.1%', f1: '39.9%', a: '88.1%', tp: '32', tn: '673', fp: '27', fn: '68' },
+                { name: 'Trial 4', params: "class_weight='balanced' (Inverse Freq.), max_iter=2000, penalty='l2', C=0.5", p: '58.4%', r: '34.8%', f1: '43.6%', a: '88.7%', tp: '34', tn: '676', fp: '24', fn: '66' },
+                { name: 'Best Configuration', params: "class_weight='balanced' (Inverse Freq.), max_iter=1000, penalty='l2', C=1.0", p: '61.2%', r: '35.1%', f1: '44.6%', a: '89.2%', tp: '35', tn: '679', fp: '21', fn: '65', isBest: true }
             ]
         },
         {
             algo: 'Random Forest',
             pros: ['Handles non-linear relationships well', 'Robust to outliers and non-scaled data', 'Provides feature importance insights'],
             cons: ['Can overfit if depth is not controlled', 'Slower prediction time than Logistic Regression', 'Consumes more memory for large forests'],
+            paramInterp: rfInterp,
             trials: [
-                { name: 'Trial 1', params: 'n_estimators=10, max_depth=None', p: '65.2%', r: '42.1%', f1: '51.1%', a: '90.0%', tp: '42', tn: '678', fp: '22', fn: '58' },
-                { name: 'Trial 2', params: "n_estimators=50, max_depth=10, class_weight='balanced'", p: '72.1%', r: '58.4%', f1: '64.5%', a: '92.0%', tp: '58', tn: '678', fp: '22', fn: '42' },
-                { name: 'Trial 3', params: 'n_estimators=150, max_depth=20', p: '78.5%', r: '64.2%', f1: '70.6%', a: '93.3%', tp: '64', tn: '683', fp: '17', fn: '36' },
-                { name: 'Trial 4', params: "n_estimators=200, max_depth=50, class_weight='balanced'", p: '80.1%', r: '68.5%', f1: '73.8%', a: '94.0%', tp: '68', tn: '684', fp: '16', fn: '32' },
-                { name: 'Best Configuration', params: "n_estimators=100, max_depth=None, class_weight='balanced'", p: '82.4%', r: '71.2%', f1: '76.4%', a: '94.5%', tp: '71', tn: '685', fp: '15', fn: '29', isBest: true }
+                { name: 'Trial 1', params: "n_estimators=10, max_depth=None (Unlimited), class_weight=None (Equal)", p: '65.2%', r: '42.1%', f1: '51.1%', a: '90.0%', tp: '42', tn: '678', fp: '22', fn: '58' },
+                { name: 'Trial 2', params: "n_estimators=50, max_depth=10, class_weight='balanced' (Inverse Freq.)", p: '72.1%', r: '58.4%', f1: '64.5%', a: '92.0%', tp: '58', tn: '678', fp: '22', fn: '42' },
+                { name: 'Trial 3', params: "n_estimators=150, max_depth=20, class_weight=None (Equal)", p: '78.5%', r: '64.2%', f1: '70.6%', a: '93.3%', tp: '64', tn: '683', fp: '17', fn: '36' },
+                { name: 'Trial 4', params: "n_estimators=200, max_depth=50, class_weight='balanced' (Inverse Freq.)", p: '80.1%', r: '68.5%', f1: '73.8%', a: '94.0%', tp: '68', tn: '684', fp: '16', fn: '32' },
+                { name: 'Best Configuration', params: "n_estimators=100, max_depth=None (Unlimited), class_weight='balanced' (Inverse Freq.)", p: '82.4%', r: '71.2%', f1: '76.4%', a: '94.5%', tp: '71', tn: '685', fp: '15', fn: '29', isBest: true }
             ]
         },
         {
             algo: 'Meta-Model (XGBoost)',
             pros: ['Highest overall accuracy and F1 score', 'Excellent handling of imbalanced datasets via scale_pos_weight', 'Captures complex interaction effects between base model probabilities'],
             cons: ['Requires base models to be trained first (higher latency pipeline)', 'Computationally intensive to tune', 'Susceptible to overfitting if learning rate is too high'],
+            paramInterp: xgbInterp,
             trials: [
-                { name: 'Trial 1', params: 'lr=0.1, max_depth=3, scale_pos_weight=1', p: '85.2%', r: '75.4%', f1: '80.0%', a: '95.3%', tp: '75', tn: '688', fp: '12', fn: '25' },
-                { name: 'Trial 2', params: 'lr=0.01, max_depth=5, scale_pos_weight=10', p: '89.1%', r: '82.3%', f1: '85.5%', a: '96.6%', tp: '82', tn: '691', fp: '9', fn: '18' },
-                { name: 'Trial 3', params: 'lr=0.1, max_depth=10, scale_pos_weight=50', p: '92.4%', r: '90.1%', f1: '91.2%', a: '97.8%', tp: '90', tn: '693', fp: '7', fn: '10' },
-                { name: 'Trial 4', params: 'lr=0.2, max_depth=4, scale_pos_weight=99', p: '94.1%', r: '95.5%', f1: '94.7%', a: '98.7%', tp: '95', tn: '695', fp: '5', fn: '5' },
-                { name: 'Best Configuration', params: 'lr=0.05, max_depth=6, scale_pos_weight=99 (Threshold 0.1)', p: '100.0%', r: '99.8%', f1: '99.8%', a: '99.8%', tp: '99', tn: '700', fp: '0', fn: '1', isBest: true }
+                { name: 'Trial 1', params: "lr=0.1, max_depth=3, scale_pos_weight=1 (Equal Weight)", p: '85.2%', r: '75.4%', f1: '80.0%', a: '95.3%', tp: '75', tn: '688', fp: '12', fn: '25' },
+                { name: 'Trial 2', params: "lr=0.01, max_depth=5, scale_pos_weight=10", p: '89.1%', r: '82.3%', f1: '85.5%', a: '96.6%', tp: '82', tn: '691', fp: '9', fn: '18' },
+                { name: 'Trial 3', params: "lr=0.1, max_depth=10, scale_pos_weight=50", p: '92.4%', r: '90.1%', f1: '91.2%', a: '97.8%', tp: '90', tn: '693', fp: '7', fn: '10' },
+                { name: 'Trial 4', params: "lr=0.2, max_depth=4, scale_pos_weight=99", p: '94.1%', r: '95.5%', f1: '94.7%', a: '98.7%', tp: '95', tn: '695', fp: '5', fn: '5' },
+                { name: 'Best Configuration', params: "lr=0.05, max_depth=6, scale_pos_weight=99 (Threshold 0.1)", p: '100.0%', r: '99.8%', f1: '99.8%', a: '99.8%', tp: '99', tn: '700', fp: '0', fn: '1', isBest: true }
             ]
         },
         {
             algo: 'Isolation Forest',
             pros: ['Does not require labeled data (Unsupervised)', 'Efficient for high-dimensional anomaly detection', 'Scales well to large datasets with sub-sampling'],
             cons: ['Can struggle with local anomalies hidden in dense clusters', 'Highly sensitive to the contamination parameter', 'Decision boundaries can be orthogonal and rigid'],
+            paramInterp: isoInterp,
             trials: [
                 { name: 'Trial 1', params: "n_estimators=50, contamination=0.2", p: '52.1%', r: '45.3%', f1: '48.5%', a: '88.1%', tp: '45', tn: '660', fp: '40', fn: '55' },
                 { name: 'Trial 2', params: 'n_estimators=100, contamination=0.1', p: '65.4%', r: '72.1%', f1: '68.6%', a: '92.0%', tp: '72', tn: '664', fp: '36', fn: '28' },
@@ -1275,12 +1309,13 @@ function loadComparisonTab() {
             algo: 'Local Outlier Factor',
             pros: ['Excellent at finding local anomalies by comparing local densities', 'Effective in datasets with clusters of varying densities', 'Unsupervised approach avoids labeling overhead'],
             cons: ['Computationally expensive (O(N^2) for distance calculation)', 'Requires careful tuning of n_neighbors', 'Hard to interpret raw novelty scores'],
+            paramInterp: lofInterp,
             trials: [
-                { name: 'Trial 1', params: "n_neighbors=5, contamination=0.2", p: '48.2%', r: '41.1%', f1: '44.4%', a: '87.3%', tp: '41', tn: '658', fp: '42', fn: '59' },
-                { name: 'Trial 2', params: 'n_neighbors=10, contamination=0.1', p: '61.5%', r: '68.5%', f1: '64.8%', a: '90.8%', tp: '68', tn: '659', fp: '41', fn: '32' },
-                { name: 'Trial 3', params: "n_neighbors=20, contamination=0.15, novelty=False", p: '78.2%', r: '81.4%', f1: '79.7%', a: '94.8%', tp: '81', tn: '678', fp: '22', fn: '19' },
-                { name: 'Trial 4', params: 'n_neighbors=50, contamination=0.01, novelty=True', p: '92.1%', r: '21.5%', f1: '34.8%', a: '90.0%', tp: '21', tn: '699', fp: '1', fn: '79' },
-                { name: 'Best Configuration', params: 'n_neighbors=20, contamination=0.05, novelty=True', p: '86.4%', r: '88.1%', f1: '87.2%', a: '96.8%', tp: '88', tn: '687', fp: '13', fn: '12', isBest: true }
+                { name: 'Trial 1', params: "n_neighbors=5, contamination=0.2, novelty=False (Inlier/Outlier)", p: '48.2%', r: '41.1%', f1: '44.4%', a: '87.3%', tp: '41', tn: '658', fp: '42', fn: '59' },
+                { name: 'Trial 2', params: "n_neighbors=10, contamination=0.1, novelty=False (Inlier/Outlier)", p: '61.5%', r: '68.5%', f1: '64.8%', a: '90.8%', tp: '68', tn: '659', fp: '41', fn: '32' },
+                { name: 'Trial 3', params: "n_neighbors=20, contamination=0.15, novelty=False (Inlier/Outlier)", p: '78.2%', r: '81.4%', f1: '79.7%', a: '94.8%', tp: '81', tn: '678', fp: '22', fn: '19' },
+                { name: 'Trial 4', params: "n_neighbors=50, contamination=0.01, novelty=True (Novelty Only)", p: '92.1%', r: '21.5%', f1: '34.8%', a: '90.0%', tp: '21', tn: '699', fp: '1', fn: '79' },
+                { name: 'Best Configuration', params: "n_neighbors=20, contamination=0.05, novelty=True (Novelty Only)", p: '86.4%', r: '88.1%', f1: '87.2%', a: '96.8%', tp: '88', tn: '687', fp: '13', fn: '12', isBest: true }
             ]
         }
     ];
@@ -1290,60 +1325,65 @@ function loadComparisonTab() {
             algo: 'Logistic Regression',
             pros: ['Highly interpretable', 'Fast training and prediction times', 'Good baseline for linearly separable data'],
             cons: ['Struggles with complex, non-linear relationships', 'Prone to underfitting on high-dimensional security logs'],
+            paramInterp: logRegInterp,
             trials: [
-                { name: 'Trial 1', params: 'class_weight=None, max_iter=100', p: '21.5%', r: '9.2%', f1: '12.9%', a: '83.8%', tp: '8', tn: '663', fp: '37', fn: '92' },
-                { name: 'Trial 2', params: "class_weight='balanced', max_iter=200", p: '38.4%', r: '25.6%', f1: '30.7%', a: '85.2%', tp: '25', tn: '657', fp: '43', fn: '75' },
-                { name: 'Trial 3', params: "class_weight='balanced', max_iter=500, penalty='l1'", p: '50.1%', r: '29.8%', f1: '37.3%', a: '87.2%', tp: '29', tn: '669', fp: '31', fn: '71' },
-                { name: 'Trial 4', params: "class_weight='balanced', max_iter=2000, C=1.0", p: '55.2%', r: '32.1%', f1: '40.6%', a: '88.0%', tp: '31', tn: '673', fp: '27', fn: '69' },
-                { name: 'Best Configuration', params: "class_weight='balanced', max_iter=1000, penalty='l2'", p: '59.8%', r: '34.2%', f1: '43.5%', a: '88.6%', tp: '33', tn: '676', fp: '24', fn: '67', isBest: true }
+                { name: 'Trial 1', params: "class_weight=None (Equal), max_iter=100, penalty='l2', C=1.0", p: '21.5%', r: '9.2%', f1: '12.9%', a: '83.8%', tp: '8', tn: '663', fp: '37', fn: '92' },
+                { name: 'Trial 2', params: "class_weight='balanced' (Inverse Freq.), max_iter=200, penalty='l2', C=1.0", p: '38.4%', r: '25.6%', f1: '30.7%', a: '85.2%', tp: '25', tn: '657', fp: '43', fn: '75' },
+                { name: 'Trial 3', params: "class_weight='balanced' (Inverse Freq.), max_iter=500, penalty='l1', C=1.0", p: '50.1%', r: '29.8%', f1: '37.3%', a: '87.2%', tp: '29', tn: '669', fp: '31', fn: '71' },
+                { name: 'Trial 4', params: "class_weight='balanced' (Inverse Freq.), max_iter=2000, penalty='l2', C=1.0", p: '55.2%', r: '32.1%', f1: '40.6%', a: '88.0%', tp: '31', tn: '673', fp: '27', fn: '69' },
+                { name: 'Best Configuration', params: "class_weight='balanced' (Inverse Freq.), max_iter=1000, penalty='l2', C=1.0", p: '59.8%', r: '34.2%', f1: '43.5%', a: '88.6%', tp: '33', tn: '676', fp: '24', fn: '67', isBest: true }
             ]
         },
         {
             algo: 'Random Forest',
             pros: ['Handles non-linear relationships well', 'Robust to outliers and non-scaled data', 'Provides feature importance insights'],
             cons: ['Can overfit if depth is not controlled', 'Slower prediction time than Logistic Regression', 'Consumes more memory for large forests'],
+            paramInterp: rfInterp,
             trials: [
-                { name: 'Trial 1', params: 'n_estimators=20, max_depth=5', p: '62.4%', r: '38.5%', f1: '47.6%', a: '89.2%', tp: '39', tn: '675', fp: '25', fn: '61' },
-                { name: 'Trial 2', params: "n_estimators=50, max_depth=15, class_weight='balanced'", p: '69.8%', r: '55.2%', f1: '61.6%', a: '91.2%', tp: '55', tn: '675', fp: '25', fn: '45' },
-                { name: 'Trial 3', params: 'n_estimators=150, max_depth=30', p: '75.2%', r: '61.8%', f1: '67.8%', a: '92.6%', tp: '61', tn: '680', fp: '20', fn: '39' },
-                { name: 'Trial 4', params: "n_estimators=250, max_depth=None, class_weight='balanced'", p: '78.5%', r: '66.4%', f1: '71.9%', a: '93.3%', tp: '65', tn: '682', fp: '18', fn: '35' },
-                { name: 'Best Configuration', params: "n_estimators=100, max_depth=None, class_weight='balanced'", p: '80.1%', r: '69.5%', f1: '74.4%', a: '93.8%', tp: '68', tn: '683', fp: '17', fn: '32', isBest: true }
+                { name: 'Trial 1', params: "n_estimators=20, max_depth=5, class_weight=None (Equal)", p: '62.4%', r: '38.5%', f1: '47.6%', a: '89.2%', tp: '39', tn: '675', fp: '25', fn: '61' },
+                { name: 'Trial 2', params: "n_estimators=50, max_depth=15, class_weight='balanced' (Inverse Freq.)", p: '69.8%', r: '55.2%', f1: '61.6%', a: '91.2%', tp: '55', tn: '675', fp: '25', fn: '45' },
+                { name: 'Trial 3', params: "n_estimators=150, max_depth=30, class_weight=None (Equal)", p: '75.2%', r: '61.8%', f1: '67.8%', a: '92.6%', tp: '61', tn: '680', fp: '20', fn: '39' },
+                { name: 'Trial 4', params: "n_estimators=250, max_depth=None (Unlimited), class_weight='balanced' (Inverse Freq.)", p: '78.5%', r: '66.4%', f1: '71.9%', a: '93.3%', tp: '65', tn: '682', fp: '18', fn: '35' },
+                { name: 'Best Configuration', params: "n_estimators=100, max_depth=None (Unlimited), class_weight='balanced' (Inverse Freq.)", p: '80.1%', r: '69.5%', f1: '74.4%', a: '93.8%', tp: '68', tn: '683', fp: '17', fn: '32', isBest: true }
             ]
         },
         {
             algo: 'Meta-Model (XGBoost)',
             pros: ['Highest overall accuracy and F1 score', 'Excellent handling of imbalanced datasets via scale_pos_weight', 'Captures complex interaction effects between base model probabilities'],
             cons: ['Requires base models to be trained first (higher latency pipeline)', 'Computationally intensive to tune', 'Susceptible to overfitting if learning rate is too high'],
+            paramInterp: xgbInterp,
             trials: [
-                { name: 'Trial 1', params: 'lr=0.1, max_depth=3, scale_pos_weight=1', p: '83.5%', r: '72.1%', f1: '77.3%', a: '94.6%', tp: '72', tn: '685', fp: '15', fn: '28' },
-                { name: 'Trial 2', params: 'lr=0.01, max_depth=5, scale_pos_weight=20', p: '87.4%', r: '80.5%', f1: '83.8%', a: '96.0%', tp: '79', tn: '689', fp: '11', fn: '21' },
-                { name: 'Trial 3', params: 'lr=0.1, max_depth=12, scale_pos_weight=75', p: '90.2%', r: '88.4%', f1: '89.2%', a: '97.2%', tp: '87', tn: '691', fp: '9', fn: '13' },
-                { name: 'Trial 4', params: 'lr=0.3, max_depth=5, scale_pos_weight=99', p: '92.5%', r: '93.2%', f1: '92.8%', a: '98.2%', tp: '92', tn: '694', fp: '6', fn: '8' },
-                { name: 'Best Configuration', params: 'lr=0.05, max_depth=6, scale_pos_weight=99 (Threshold 0.1)', p: '99.8%', r: '99.5%', f1: '99.6%', a: '99.6%', tp: '98', tn: '699', fp: '1', fn: '2', isBest: true }
+                { name: 'Trial 1', params: "lr=0.1, max_depth=3, scale_pos_weight=1 (Equal Weight)", p: '83.5%', r: '72.1%', f1: '77.3%', a: '94.6%', tp: '72', tn: '685', fp: '15', fn: '28' },
+                { name: 'Trial 2', params: "lr=0.01, max_depth=5, scale_pos_weight=20", p: '87.4%', r: '80.5%', f1: '83.8%', a: '96.0%', tp: '79', tn: '689', fp: '11', fn: '21' },
+                { name: 'Trial 3', params: "lr=0.1, max_depth=12, scale_pos_weight=75", p: '90.2%', r: '88.4%', f1: '89.2%', a: '97.2%', tp: '87', tn: '691', fp: '9', fn: '13' },
+                { name: 'Trial 4', params: "lr=0.3, max_depth=5, scale_pos_weight=99", p: '92.5%', r: '93.2%', f1: '92.8%', a: '98.2%', tp: '92', tn: '694', fp: '6', fn: '8' },
+                { name: 'Best Configuration', params: "lr=0.05, max_depth=6, scale_pos_weight=99 (Threshold 0.1)", p: '99.8%', r: '99.5%', f1: '99.6%', a: '99.6%', tp: '98', tn: '699', fp: '1', fn: '2', isBest: true }
             ]
         },
         {
             algo: 'Isolation Forest',
             pros: ['Does not require labeled data (Unsupervised)', 'Efficient for high-dimensional anomaly detection', 'Scales well to large datasets with sub-sampling'],
             cons: ['Can struggle with local anomalies hidden in dense clusters', 'Highly sensitive to the contamination parameter', 'Decision boundaries can be orthogonal and rigid'],
+            paramInterp: isoInterp,
             trials: [
                 { name: 'Trial 1', params: "n_estimators=50, contamination=0.2", p: '49.8%', r: '42.5%', f1: '45.8%', a: '87.5%', tp: '42', tn: '658', fp: '42', fn: '58' },
-                { name: 'Trial 2', params: 'n_estimators=100, contamination=0.15', p: '62.4%', r: '68.2%', f1: '65.1%', a: '91.2%', tp: '68', tn: '662', fp: '38', fn: '32' },
-                { name: 'Trial 3', params: 'n_estimators=150, contamination=0.08', p: '80.1%', r: '82.5%', f1: '81.2%', a: '95.2%', tp: '82', tn: '680', fp: '20', fn: '18' },
-                { name: 'Trial 4', params: 'n_estimators=250, contamination=0.02', p: '93.5%', r: '22.4%', f1: '36.1%', a: '89.8%', tp: '22', tn: '697', fp: '3', fn: '78' },
-                { name: 'Best Configuration', params: 'n_estimators=150, contamination=0.05 (Fixed)', p: '86.2%', r: '89.4%', f1: '87.7%', a: '96.8%', tp: '88', tn: '686', fp: '14', fn: '12', isBest: true }
+                { name: 'Trial 2', params: "n_estimators=100, contamination=0.15", p: '62.4%', r: '68.2%', f1: '65.1%', a: '91.2%', tp: '68', tn: '662', fp: '38', fn: '32' },
+                { name: 'Trial 3', params: "n_estimators=150, contamination=0.08", p: '80.1%', r: '82.5%', f1: '81.2%', a: '95.2%', tp: '82', tn: '680', fp: '20', fn: '18' },
+                { name: 'Trial 4', params: "n_estimators=250, contamination=0.02", p: '93.5%', r: '22.4%', f1: '36.1%', a: '89.8%', tp: '22', tn: '697', fp: '3', fn: '78' },
+                { name: 'Best Configuration', params: "n_estimators=150, contamination=0.05 (Fixed)", p: '86.2%', r: '89.4%', f1: '87.7%', a: '96.8%', tp: '88', tn: '686', fp: '14', fn: '12', isBest: true }
             ]
         },
         {
             algo: 'Local Outlier Factor',
             pros: ['Excellent at finding local anomalies by comparing local densities', 'Effective in datasets with clusters of varying densities', 'Unsupervised approach avoids labeling overhead'],
             cons: ['Computationally expensive (O(N^2) for distance calculation)', 'Requires careful tuning of n_neighbors', 'Hard to interpret raw novelty scores'],
+            paramInterp: lofInterp,
             trials: [
-                { name: 'Trial 1', params: "n_neighbors=5, contamination=0.2", p: '45.2%', r: '38.5%', f1: '41.5%', a: '86.6%', tp: '38', tn: '655', fp: '45', fn: '62' },
-                { name: 'Trial 2', params: 'n_neighbors=15, contamination=0.1', p: '58.4%', r: '65.2%', f1: '61.6%', a: '90.2%', tp: '65', tn: '657', fp: '43', fn: '35' },
-                { name: 'Trial 3', params: "n_neighbors=20, contamination=0.15, novelty=False", p: '75.6%', r: '78.5%', f1: '77.0%', a: '94.2%', tp: '78', tn: '676', fp: '24', fn: '22' },
-                { name: 'Trial 4', params: 'n_neighbors=40, contamination=0.02, novelty=True', p: '90.2%', r: '18.5%', f1: '30.7%', a: '89.5%', tp: '18', tn: '698', fp: '2', fn: '82' },
-                { name: 'Best Configuration', params: 'n_neighbors=20, contamination=0.05, novelty=True', p: '84.5%', r: '86.2%', f1: '85.3%', a: '96.0%', tp: '85', tn: '683', fp: '17', fn: '15', isBest: true }
+                { name: 'Trial 1', params: "n_neighbors=5, contamination=0.2, novelty=False (Inlier/Outlier)", p: '45.2%', r: '38.5%', f1: '41.5%', a: '86.6%', tp: '38', tn: '655', fp: '45', fn: '62' },
+                { name: 'Trial 2', params: "n_neighbors=15, contamination=0.1, novelty=False (Inlier/Outlier)", p: '58.4%', r: '65.2%', f1: '61.6%', a: '90.2%', tp: '65', tn: '657', fp: '43', fn: '35' },
+                { name: 'Trial 3', params: "n_neighbors=20, contamination=0.15, novelty=False (Inlier/Outlier)", p: '75.6%', r: '78.5%', f1: '77.0%', a: '94.2%', tp: '78', tn: '676', fp: '24', fn: '22' },
+                { name: 'Trial 4', params: "n_neighbors=40, contamination=0.02, novelty=True (Novelty Only)", p: '90.2%', r: '18.5%', f1: '30.7%', a: '89.5%', tp: '18', tn: '698', fp: '2', fn: '82' },
+                { name: 'Best Configuration', params: "n_neighbors=20, contamination=0.05, novelty=True (Novelty Only)", p: '84.5%', r: '86.2%', f1: '85.3%', a: '96.0%', tp: '85', tn: '683', fp: '17', fn: '15', isBest: true }
             ]
         }
     ];
@@ -1418,6 +1458,7 @@ function loadComparisonTab() {
 
             const prosList = modelData.pros.map(p => `<li style="margin-bottom: 5px;"><span style="color: #38ef7d; font-weight: bold; margin-right: 5px;">+</span> ${p}</li>`).join('');
             const consList = modelData.cons.map(c => `<li style="margin-bottom: 5px;"><span style="color: #ff5c5c; font-weight: bold; margin-right: 5px;">-</span> ${c}</li>`).join('');
+            const paramList = modelData.paramInterp ? modelData.paramInterp.map(p => `<li style="margin-bottom: 5px;"><span style="color: #007aff; font-weight: bold; margin-right: 5px;">*</span> ${p}</li>`).join('') : '';
 
             prosConsDiv.innerHTML = `
                 <div style="flex: 1;">
@@ -1428,6 +1469,12 @@ function loadComparisonTab() {
                     <strong style="color: #ff5c5c; display: block; margin-bottom: 8px;">Disadvantages</strong>
                     <ul style="list-style-type: none; padding: 0; margin: 0; color: #cbd5e1;">${consList}</ul>
                 </div>
+                ${paramList ? `
+                <div style="flex: 1.5;">
+                    <strong style="color: #007aff; display: block; margin-bottom: 8px;">Parameter Interpretation</strong>
+                    <ul style="list-style-type: none; padding: 0; margin: 0; color: #cbd5e1;">${paramList}</ul>
+                </div>
+                ` : ''}
             `;
             wrapper.appendChild(prosConsDiv);
 
